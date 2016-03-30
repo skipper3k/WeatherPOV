@@ -9,6 +9,16 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+/**
+ *
+ * Main Android activity
+ *
+ * TODO:
+ *  - Recycleview list + adapter
+ *  - Toggle listview/no cities message
+ *  - Connect to service to access data
+ *
+ */
 public class WeatherPOVActivity extends AppCompatActivity {
 
     @Override

@@ -1,0 +1,3 @@
+## Showcase weather app
+
+In this Android Exercise you will create a working application that shows weather data from the OpenWeatherMap API (http://openweathermap.org/api). The user can add multiple cities and check the weather in those cities. If possible, use the default Android components (this mainly concerns the widgets, don’t use libraries just because they exist, you must have a solid reason to use each and every library).
