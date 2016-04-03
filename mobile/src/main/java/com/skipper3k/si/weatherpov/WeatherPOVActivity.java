@@ -15,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
+import com.skipper3k.si.weatherpov.helpers.Config;
 
 /**
  *
@@ -25,14 +26,18 @@ import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
  *  - Toggle listview/no cities message
  *  - Connect to service to access data
  *
+ *
  */
 public class WeatherPOVActivity extends AppCompatActivity {
 
     /**
-     *  This is the main service. This is where we get the data from.
+     *  This is the main fetcher service. This is where we get the data from.
      */
     private WeatherFetcherService mWeatherFetcherService;
     boolean mBound = false;
+
+
+    private FloatingActionButton fab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +46,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab = (FloatingActionButton) findViewById(R.id.fab);
 
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -49,12 +54,18 @@ public class WeatherPOVActivity extends AppCompatActivity {
                 Snackbar.make(view, mBound ? "Service is connected." : "Service is not connected.", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
 
+                if (Config.DEBUG && mBound) {
+                    // Acts as a test button too!
+                    mWeatherFetcherService.fetchCitiesList();
+                }
             }
         });
     }
 
 
-    /** Defines callbacks for service binding, passed to bindService() */
+    /**
+        service connection
+     */
     private ServiceConnection mConnection = new ServiceConnection() {
 
         @Override
@@ -65,8 +76,10 @@ public class WeatherPOVActivity extends AppCompatActivity {
             mWeatherFetcherService = binder.getService();
             mBound = true;
 
-
-            mWeatherFetcherService.sayHi();
+            if (Config.DEBUG) {
+                Snackbar.make(fab, mBound ? "Service is connected." : "Service is not connected.", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
         }
 
         @Override
