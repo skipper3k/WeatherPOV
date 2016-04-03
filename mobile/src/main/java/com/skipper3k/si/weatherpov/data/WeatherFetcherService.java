@@ -7,6 +7,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.skipper3k.si.weatherpov.helpers.Config;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,6 +20,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by skipper3k on 03/04/16.
@@ -65,6 +71,16 @@ public class WeatherFetcherService extends Service {
      */
     private static final String API_KEY = "79bfc35c0e64f6e2364384b6b2f5a1f3";
 
+    public Map<String, String> getCities() {
+        return cities;
+    }
+
+    private Map<String, String> cities;
+
+
+    private boolean FETCHING_CITIES;
+
+
 
     public interface RequestStringListener {
         void requestFinished(JSONObject json);
@@ -77,6 +93,13 @@ public class WeatherFetcherService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e(TAG, "Starting service");
+
+        /**
+         * Load cities from db or the web ...
+         */
+        if (cities == null) {
+            fetchCitiesList();
+        }
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -94,6 +117,10 @@ public class WeatherFetcherService extends Service {
      * we get the list of cities every now and then and save it locally for further use
      */
     public void fetchCitiesList() {
+
+        if (FETCHING_CITIES) return;
+
+        FETCHING_CITIES = true;
         RequestHtmlAsString task = new RequestHtmlAsString(new RequestStringListener() {
             @Override
             public void requestFinished(JSONObject json) {
@@ -107,7 +134,7 @@ public class WeatherFetcherService extends Service {
 
             @Override
             public void requestFinishedString(String html) {
-                Log.i(TAG, "Got a list of cities! " + html);
+                parseCitiesList(html);
             }
 
             @Override
@@ -117,6 +144,72 @@ public class WeatherFetcherService extends Service {
         });
         task.execute(cityListURL);
     }
+
+    /**
+     * Parse the text file of all the cities. This is not bulletproof ...
+     *
+     * We only parse the city name and id because it is relevant to this app.
+     * We could make a data structure and save the coordinates as well...
+     *
+     * fixme: slow, add to async processing, because this runs on the main thread and is UI blocking! and find a regex ninja! ...
+     *
+     * @param citiesString list of cities fetched via cityListURL
+     */
+    private void parseCitiesList(String citiesString) {
+        if (cities == null) cities = new HashMap<String, String>();
+
+        long startTime = System.nanoTime();
+
+        String citiesSplit[] = citiesString.split("\\r?\\n");
+
+        Log.i(TAG, "parsing cities! " + citiesSplit.length);
+
+        Pattern pId = Pattern.compile("^[0-9]*");
+        Pattern pCity = Pattern.compile("^[[a-z] [A-Z]-]*");
+
+
+        for (int i = 1; i < citiesSplit.length; i++) {
+            String line = citiesSplit[i];
+
+            Matcher matcher = pId.matcher(line);
+            String id = null;
+
+            while (matcher.find()) {
+                line = line.substring(matcher.end(), line.length()).trim();
+                id = matcher.group();
+            }
+
+            Matcher citiMatch = pCity.matcher(line);
+            String city = null;
+
+            while (citiMatch.find()) {
+                city = citiMatch.group();
+                if (i%500 == 0) Log.e(TAG, "found city: " + city + " in : " + line);
+            }
+
+            if (id != null && city != null) {
+                cities.put(city, id);
+            }
+        }
+
+
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);
+
+        if (Config.DEBUG) Log.i(TAG, "parsing cities took: " + duration/1000000 + " milis.");
+
+        saveCitiesList(cities);
+    }
+
+    /**
+     * TODO: add database!
+     *
+     * @param citiesList list of cities with ids
+     */
+    private void saveCitiesList(Map<String, String> citiesList) {
+
+    }
+
 
     private static class RequestHtmlAsString extends AsyncTask<String, Void, String> {
         private RequestStringListener mListener;
