@@ -1,6 +1,11 @@
 package com.skipper3k.si.weatherpov;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -8,6 +13,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
 
 /**
  *
@@ -21,6 +28,12 @@ import android.view.MenuItem;
  */
 public class WeatherPOVActivity extends AppCompatActivity {
 
+    /**
+     *  This is the main service. This is where we get the data from.
+     */
+    private WeatherFetcherService mWeatherFetcherService;
+    boolean mBound = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,13 +42,57 @@ public class WeatherPOVActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                Snackbar.make(view, mBound ? "Service is connected." : "Service is not connected.", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
+
             }
         });
+    }
+
+
+    /** Defines callbacks for service binding, passed to bindService() */
+    private ServiceConnection mConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            WeatherFetcherService.WeatherFetcherServiceBinder binder = (WeatherFetcherService.WeatherFetcherServiceBinder) service;
+            mWeatherFetcherService = binder.getService();
+            mBound = true;
+
+
+            mWeatherFetcherService.sayHi();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mBound = false;
+        }
+    };
+
+    /**
+     * override so we can start the weather fetcher service
+     */
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Intent intent = new Intent(this, WeatherFetcherService.class);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        if (mBound) {
+            unbindService(mConnection);
+            mBound = false;
+        }
     }
 
     @Override
