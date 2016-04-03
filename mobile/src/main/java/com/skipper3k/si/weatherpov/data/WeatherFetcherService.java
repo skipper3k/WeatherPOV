@@ -55,6 +55,7 @@ public class WeatherFetcherService extends Service {
     private static final int API_TIMEOUT_MIN = 10;
     private static final String API_BASE_URL = "http://api.openweathermap.org";
 
+    private static final String LAST_CITIES_UPDATE = "com.skipper3k.lat.update";
 
     /**
      * I would consider this a hack. But was the best way I could find to get all the cities in the OpenWeatherMap database.
@@ -71,16 +72,28 @@ public class WeatherFetcherService extends Service {
      */
     private static final String API_KEY = "79bfc35c0e64f6e2364384b6b2f5a1f3";
 
-    public Map<String, String> getCities() {
+    public Map<String, WPOVCity> getCities() {
         return cities;
     }
 
-    private Map<String, String> cities;
+    private Map<String, WPOVCity> cities;
 
 
     private boolean FETCHING_CITIES;
 
+    /**
+     * Listneres for returning async data ..
+     */
+    public interface WeatherFetcherListener {
+        public void citiesLoaded(Map<String, WPOVCity> cities);
+        void fetchedWeather(WPOVCity city);
+    }
 
+    public void setmListener(WeatherFetcherListener mListener) {
+        this.mListener = mListener;
+    }
+
+    private WeatherFetcherListener mListener;
 
     public interface RequestStringListener {
         void requestFinished(JSONObject json);
@@ -92,17 +105,10 @@ public class WeatherFetcherService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e(TAG, "Starting service");
-
-        /**
-         * Load cities from db or the web ...
-         */
-        if (cities == null) {
-            fetchCitiesList();
-        }
-
+        Log.e(TAG, "Starting service!");
         return super.onStartCommand(intent, flags, startId);
     }
+
 
 
     /**
@@ -117,6 +123,19 @@ public class WeatherFetcherService extends Service {
      * we get the list of cities every now and then and save it locally for further use
      */
     public void fetchCitiesList() {
+        /**
+         * Load cities from db or the web ...
+         */
+
+        if (Config.DEBUG) Log.i(TAG, "Fetching cities");
+
+        WPOVDatabaseHelper db = new WPOVDatabaseHelper();
+        long citiesCount = db.getCitiesCount(this);
+
+        if (citiesCount > 0) {
+            if (Config.DEBUG) Log.i(TAG, "got cities from database: " + citiesCount);
+            return;
+        }
 
         if (FETCHING_CITIES) return;
 
@@ -156,7 +175,7 @@ public class WeatherFetcherService extends Service {
      * @param citiesString list of cities fetched via cityListURL
      */
     private void parseCitiesList(String citiesString) {
-        if (cities == null) cities = new HashMap<String, String>();
+        if (cities == null) cities = new HashMap<String, WPOVCity>();
 
         long startTime = System.nanoTime();
 
@@ -184,11 +203,13 @@ public class WeatherFetcherService extends Service {
 
             while (citiMatch.find()) {
                 city = citiMatch.group();
-                if (i%500 == 0) Log.e(TAG, "found city: " + city + " in : " + line);
             }
 
             if (id != null && city != null) {
-                cities.put(city, id);
+                WPOVCity c = new WPOVCity();
+                c.id = id;
+                c.name = city;
+                cities.put(city, c);
             }
         }
 
@@ -198,7 +219,11 @@ public class WeatherFetcherService extends Service {
 
         if (Config.DEBUG) Log.i(TAG, "parsing cities took: " + duration/1000000 + " milis.");
 
+
+        if (mListener != null) mListener.citiesLoaded(cities);
         saveCitiesList(cities);
+
+        // save last update
     }
 
     /**
@@ -206,8 +231,12 @@ public class WeatherFetcherService extends Service {
      *
      * @param citiesList list of cities with ids
      */
-    private void saveCitiesList(Map<String, String> citiesList) {
+    private void saveCitiesList(Map<String, WPOVCity> citiesList) {
+        Log.i(TAG, "Saving cities to database!");
+        WPOVDatabaseHelper db = new WPOVDatabaseHelper();
+        db.saveCities(this, citiesList);
 
+        FETCHING_CITIES = false;
     }
 
 

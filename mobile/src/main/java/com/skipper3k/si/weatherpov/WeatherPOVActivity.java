@@ -80,6 +80,11 @@ public class WeatherPOVActivity extends AppCompatActivity {
                 Snackbar.make(fab, mBound ? "Service is connected." : "Service is not connected.", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
+
+            /**
+                fetch cities list in background
+             */
+            mWeatherFetcherService.fetchCitiesList();
         }
 
         @Override
@@ -94,8 +99,10 @@ public class WeatherPOVActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        Intent intent = new Intent(this, WeatherFetcherService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        if (!mBound) {
+            Intent intent = new Intent(this, WeatherFetcherService.class);
+            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
     @Override
