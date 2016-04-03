@@ -1,6 +1,7 @@
 package com.skipper3k.si.weatherpov.data;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Binder;
@@ -21,6 +22,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,12 +74,6 @@ public class WeatherFetcherService extends Service {
      */
     private static final String API_KEY = "79bfc35c0e64f6e2364384b6b2f5a1f3";
 
-    public Map<String, WPOVCity> getCities() {
-        return cities;
-    }
-
-    private Map<String, WPOVCity> cities;
-
 
     private boolean FETCHING_CITIES;
 
@@ -85,8 +81,9 @@ public class WeatherFetcherService extends Service {
      * Listneres for returning async data ..
      */
     public interface WeatherFetcherListener {
-        public void citiesLoaded(Map<String, WPOVCity> cities);
+        void citiesLoaded(boolean success);
         void fetchedWeather(WPOVCity city);
+        void searchFound(List<WPOVCity> cities);
     }
 
     public void setmListener(WeatherFetcherListener mListener) {
@@ -122,7 +119,7 @@ public class WeatherFetcherService extends Service {
     /**
      * we get the list of cities every now and then and save it locally for further use
      */
-    public void fetchCitiesList() {
+    public void fetchCitiesList(final WeatherFetcherListener listener) {
         /**
          * Load cities from db or the web ...
          */
@@ -153,7 +150,8 @@ public class WeatherFetcherService extends Service {
 
             @Override
             public void requestFinishedString(String html) {
-                parseCitiesList(html);
+                SaveCitiesAsync citiesTask = new SaveCitiesAsync(getApplicationContext(), listener);
+                citiesTask.execute(html);
             }
 
             @Override
@@ -174,8 +172,8 @@ public class WeatherFetcherService extends Service {
      *
      * @param citiesString list of cities fetched via cityListURL
      */
-    private void parseCitiesList(String citiesString) {
-        if (cities == null) cities = new HashMap<String, WPOVCity>();
+    private static Map<String, WPOVCity> parseCitiesList(String citiesString) {
+        Map<String, WPOVCity> cities = new HashMap<String, WPOVCity>();
 
         long startTime = System.nanoTime();
 
@@ -217,13 +215,9 @@ public class WeatherFetcherService extends Service {
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
 
-        if (Config.DEBUG) Log.i(TAG, "parsing cities took: " + duration/1000000 + " milis.");
+        if (Config.DEBUG) Log.i(TAG, "parsing cities took: " + duration / 1000000 + " milis.");
 
-
-        if (mListener != null) mListener.citiesLoaded(cities);
-        saveCitiesList(cities);
-
-        // save last update
+        return cities;
     }
 
     /**
@@ -231,14 +225,46 @@ public class WeatherFetcherService extends Service {
      *
      * @param citiesList list of cities with ids
      */
-    private void saveCitiesList(Map<String, WPOVCity> citiesList) {
+    private static boolean saveCitiesList(Context context, Map<String, WPOVCity> citiesList) {
         Log.i(TAG, "Saving cities to database!");
         WPOVDatabaseHelper db = new WPOVDatabaseHelper();
-        db.saveCities(this, citiesList);
-
-        FETCHING_CITIES = false;
+        return db.saveCities(context, citiesList);
     }
 
+
+    /**
+     * downloading, parsing and saving 70k etries takes quite a lot of time ...
+     * lets do it in the background, not block ui and call a method on callback after finish.
+     */
+    private static class SaveCitiesAsync extends AsyncTask<String, Void, Boolean> {
+        private WeatherFetcherListener mListener;
+        private Context mContext;
+
+        public SaveCitiesAsync(Context context, WeatherFetcherListener l) {
+            this.mContext = context;
+            mListener = l;
+        }
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+            String citiesString = params[0];
+
+            if (citiesString == null) {
+                if (mListener != null) mListener.citiesLoaded(false);
+                return null;
+            }
+
+            Map<String, WPOVCity> cities = WeatherFetcherService.parseCitiesList(citiesString);
+            boolean success = WeatherFetcherService.saveCitiesList(mContext, cities);
+
+            return true;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if (mListener != null) mListener.citiesLoaded(success.booleanValue());
+        }
+    }
 
     private static class RequestHtmlAsString extends AsyncTask<String, Void, String> {
         private RequestStringListener mListener;

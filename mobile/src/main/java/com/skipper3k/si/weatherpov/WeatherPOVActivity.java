@@ -14,8 +14,11 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.skipper3k.si.weatherpov.data.WPOVCity;
 import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
 import com.skipper3k.si.weatherpov.helpers.Config;
+
+import java.util.List;
 
 /**
  *
@@ -56,12 +59,37 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
                 if (Config.DEBUG && mBound) {
                     // Acts as a test button too!
-                    mWeatherFetcherService.fetchCitiesList();
+                    fetchCities();
                 }
             }
         });
     }
 
+
+    private void fetchCities() {
+        /**
+         fetch cities list in background
+         */
+        mWeatherFetcherService.fetchCitiesList(new WeatherFetcherService.WeatherFetcherListener() {
+            @Override
+            public void citiesLoaded(boolean success) {
+                if (Config.DEBUG) {
+                    Snackbar.make(fab, success ? "Cities successfully loaded!" : "Cities load failed!", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                }
+            }
+
+            @Override
+            public void fetchedWeather(WPOVCity city) {
+
+            }
+
+            @Override
+            public void searchFound(List<WPOVCity> cities) {
+
+            }
+        });
+    }
 
     /**
         service connection
@@ -81,10 +109,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
 
-            /**
-                fetch cities list in background
-             */
-            mWeatherFetcherService.fetchCitiesList();
+            fetchCities();
         }
 
         @Override

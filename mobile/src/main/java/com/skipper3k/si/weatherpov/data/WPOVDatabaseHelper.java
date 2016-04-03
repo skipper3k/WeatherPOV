@@ -48,7 +48,7 @@ public class WPOVDatabaseHelper {
      * @param context context of the app
      * @param cities list of cities
      */
-    public void saveCities(Context context, Map<String, WPOVCity> cities) {
+    public boolean saveCities(Context context, Map<String, WPOVCity> cities) {
         if (Config.DEBUG) Log.i(TAG, "Saving to database.");
         long startTime = System.nanoTime();
 
@@ -56,6 +56,8 @@ public class WPOVDatabaseHelper {
         SQLiteDatabase db = database.getWritableDatabase();
 
         db.beginTransaction();
+
+        boolean success = true;
 
         final String sql = " INSERT OR REPLACE INTO " + WPOVDatabase.TABLE_CITY + "("
                 + " owmid,"             // 1
@@ -75,8 +77,7 @@ public class WPOVDatabaseHelper {
                 db.setTransactionSuccessful();
 
             } catch (SQLiteException e) {
-
-
+                success = false;
             }
         } finally {
             db.endTransaction();
@@ -87,13 +88,13 @@ public class WPOVDatabaseHelper {
         long duration = (endTime - startTime);
 
         if (Config.DEBUG) Log.i(TAG, "Sqving cities to database took: " + duration/1000000 + " milis.");
-        if (Config.DEBUG) Log.i(TAG, "Saved cities to database.");
 
         db.close();
+        return success;
     }
 
     /**
-     *      *
+     *
      * @param context
      * @return number of cities in the database
      */
@@ -105,6 +106,7 @@ public class WPOVDatabaseHelper {
         db.close();
         return cnt;
     }
+
 
     public WPOVCity getCityFromDB(Context context, String id) {
         WPOVDatabase database = new WPOVDatabase(context);
