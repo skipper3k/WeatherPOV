@@ -117,8 +117,8 @@ public class WPOVDatabaseHelper {
         SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
         builder.setTables(WPOVDatabase.TABLE_CITY);
 
-        String selection = WPOVDatabase.COLUMN_NAME + " LIKE ?";
-        String[] selectionArgs = new String[] { "%" + city + "%"};
+        String selection = "lower(" + WPOVDatabase.COLUMN_NAME + ") LIKE ?";
+        String[] selectionArgs = new String[] { "%" + city.toLowerCase().trim() + "%"};
 
         Cursor cursor = builder.query(connection,
                 null, selection, selectionArgs, null, null, null);
