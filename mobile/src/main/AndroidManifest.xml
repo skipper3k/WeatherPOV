@@ -20,7 +20,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".data.WeatherFetcherService" />
+        <service android:name=".data.WeatherFetcherService" android:stopWithTask="false" />
 
     </application>
 

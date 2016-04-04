@@ -60,7 +60,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
                 if (Config.DEBUG && mBound) {
                     // Acts as a test button too!
-                    fetchCities();
+                    if (mWeatherFetcherService != null) mWeatherFetcherService.searchForCity("francisc");
                 }
             }
         });
@@ -82,6 +82,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
             @Override
             public void citiesLoaded(Map<String, WPOVCity> cities) {
+                cities.clear();
+
                 if (Config.DEBUG) {
                     Snackbar.make(fab, cities != null ? "Cities successfully loaded!" : "Cities load failed!", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();

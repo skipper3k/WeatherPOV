@@ -124,6 +124,11 @@ public class WeatherFetcherService extends Service {
 
     }
 
+    public void searchForCity(String searchString) {
+        dbHelper.searchForCity(searchString);
+    }
+
+
     /**
      * we get the list of cities every now and then and save it locally for further use
      */
@@ -132,15 +137,15 @@ public class WeatherFetcherService extends Service {
          * Load cities from db or the web ...
          */
 
-        long citiesCount = dbHelper.getCitiesCount();
-        if (Config.DEBUG) Log.i(TAG, "Fetching cities db: " + citiesCount);
-        if (Config.DEBUG) Log.i(TAG, "Search for london: " + dbHelper.searchForCity("lond"));
+
+//        if (Config.DEBUG) Log.i(TAG, "Fetching cities db: " + citiesCount);
+//        if (Config.DEBUG) Log.i(TAG, "Search for london: " + dbHelper.searchForCity("lond"));
 
         if (Config.DEBUG) Log.i(TAG, "Fetching cities: " + FETCHING_CITIES);
         if (FETCHING_CITIES) return;
 
 
-
+        long citiesCount = dbHelper.getCitiesCount();
         if (citiesCount > 0) {
             if (Config.DEBUG) Log.i(TAG, "got cities from database: " + citiesCount);
             return;
@@ -160,7 +165,23 @@ public class WeatherFetcherService extends Service {
 
             @Override
             public void requestFinishedString(String html) {
-                SaveCitiesAsync citiesTask = new SaveCitiesAsync(getApplicationContext(),listener, dbHelper);
+                SaveCitiesAsync citiesTask = new SaveCitiesAsync(getApplicationContext(), new WeatherFetcherListener() {
+                    @Override
+                    public void citiesLoaded(Map<String, WPOVCity> cities) {
+//                        WeatherFetcherService.saveCitiesList(getApplicationContext(), cities, dbHelper);
+                        if (listener != null) listener.citiesLoaded(cities);
+                    }
+
+                    @Override
+                    public void fetchedWeather(WPOVCity city) {
+
+                    }
+
+                    @Override
+                    public void searchFound(List<WPOVCity> cities) {
+
+                    }
+                }, dbHelper);
                 citiesTask.execute(html);
             }
 

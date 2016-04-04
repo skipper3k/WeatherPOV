@@ -43,9 +43,12 @@ public class WPOVDatabaseHelper {
     public WPOVDatabaseHelper(Context context) {
         WPOVDatabase database = new WPOVDatabase(context);
         connection = database.getWritableDatabase();
+
+        connection.enableWriteAheadLogging();
     }
 
     public void closeConnections() {
+        Log.e(TAG, "closing DB connection!");
         connection.close();
     }
 
@@ -84,8 +87,8 @@ public class WPOVDatabaseHelper {
         } catch (SQLiteException e) {
             success = false;
         }  finally {
+
             connection.endTransaction();
-            stmt.close();
         }
 
         long endTime = System.nanoTime();
@@ -111,19 +114,22 @@ public class WPOVDatabaseHelper {
      * @return
      */
     public Cursor searchForCity(String city) {
+        Log.e(TAG, "search for city");
         SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
         builder.setTables(WPOVDatabase.TABLE_CITY);
 
         String selection = WPOVDatabase.COLUMN_NAME + " LIKE ?";
-        String[] selectionArgs = new String[] { city + "%"};
+        String[] selectionArgs = new String[] { "%" + city + "%"};
 
         Cursor cursor = builder.query(connection,
                 null, selection, selectionArgs, null, null, null);
 
         if (cursor == null) {
+            Log.e(TAG, "nothing found");
             return null;
         } else if (!cursor.moveToFirst()) {
             cursor.close();
+            Log.e(TAG, "nothing found");
             return null;
         }
 
