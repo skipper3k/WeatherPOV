@@ -137,11 +137,6 @@ public class WeatherPOVActivity extends AppCompatActivity {
             mWeatherFetcherService = binder.getService();
             mBound = true;
 
-            if (Config.DEBUG) {
-                Snackbar.make(fab, mBound ? "Service is connected." : "Service is not connected.", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-
             fetchCities();
         }
 

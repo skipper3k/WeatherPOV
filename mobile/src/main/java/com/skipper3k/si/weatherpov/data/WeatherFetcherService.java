@@ -3,6 +3,7 @@ package com.skipper3k.si.weatherpov.data;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
@@ -124,8 +125,8 @@ public class WeatherFetcherService extends Service {
 
     }
 
-    public void searchForCity(String searchString) {
-        dbHelper.searchForCity(searchString);
+    public Cursor searchForCity(String searchString) {
+        return dbHelper.searchForCity(searchString);
     }
 
 
@@ -166,7 +167,7 @@ public class WeatherFetcherService extends Service {
                 SaveCitiesAsync citiesTask = new SaveCitiesAsync(WeatherFetcherService.this, new WeatherFetcherListener() {
                     @Override
                     public void citiesLoaded(Map<String, WPOVCity> cities) {
-//                        WeatherFetcherService.saveCitiesList(getApplicationContext(), cities, dbHelper);
+                        FETCHING_CITIES = false;
                         if (listener != null) listener.citiesLoaded(cities);
                     }
 
