@@ -82,7 +82,7 @@ public class WeatherFetcherService extends Service {
      * Listneres for returning async data ..
      */
     public interface WeatherFetcherListener {
-        void citiesLoaded(boolean success);
+        void citiesLoaded(Map<String, WPOVCity> cities);
         void fetchedWeather(WPOVCity city);
         void searchFound(List<WPOVCity> cities);
     }
@@ -128,13 +128,13 @@ public class WeatherFetcherService extends Service {
      * we get the list of cities every now and then and save it locally for further use
      */
     public void fetchCitiesList(final WeatherFetcherListener listener) {
-
         /**
          * Load cities from db or the web ...
          */
 
         long citiesCount = dbHelper.getCitiesCount();
         if (Config.DEBUG) Log.i(TAG, "Fetching cities db: " + citiesCount);
+        if (Config.DEBUG) Log.i(TAG, "Search for london: " + dbHelper.searchForCity("lond"));
 
         if (Config.DEBUG) Log.i(TAG, "Fetching cities: " + FETCHING_CITIES);
         if (FETCHING_CITIES) return;
@@ -145,8 +145,6 @@ public class WeatherFetcherService extends Service {
             if (Config.DEBUG) Log.i(TAG, "got cities from database: " + citiesCount);
             return;
         }
-
-
 
         FETCHING_CITIES = true;
         RequestHtmlAsString task = new RequestHtmlAsString(new RequestStringListener() {
@@ -162,7 +160,7 @@ public class WeatherFetcherService extends Service {
 
             @Override
             public void requestFinishedString(String html) {
-                SaveCitiesAsync citiesTask = new SaveCitiesAsync(getApplicationContext(), listener);
+                SaveCitiesAsync citiesTask = new SaveCitiesAsync(getApplicationContext(),listener, dbHelper);
                 citiesTask.execute(html);
             }
 
@@ -196,7 +194,6 @@ public class WeatherFetcherService extends Service {
         Pattern pId = Pattern.compile("^[0-9]*");
         Pattern pCity = Pattern.compile("^[[a-z] [A-Z]-]*");
 
-
         for (int i = 1; i < citiesSplit.length; i++) {
             String line = citiesSplit[i];
 
@@ -223,7 +220,6 @@ public class WeatherFetcherService extends Service {
             }
         }
 
-
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
 
@@ -233,49 +229,49 @@ public class WeatherFetcherService extends Service {
     }
 
     /**
-     * TODO: add database!
+     *
      *
      * @param citiesList list of cities with ids
      */
-    private static boolean saveCitiesList(Context context, Map<String, WPOVCity> citiesList) {
+    private static boolean saveCitiesList(Context context, Map<String, WPOVCity> citiesList, WPOVDatabaseHelper dbHelper) {
         Log.i(TAG, "Saving cities to database!");
-        WPOVDatabaseHelper dbHelper = new WPOVDatabaseHelper(context);
-        boolean success = dbHelper.saveCities(context, citiesList);
-        dbHelper.closeConnections();
-        return success;
+        return dbHelper.saveCities(context, citiesList);
     }
 
     /**
      * downloading, parsing and saving 70k etries takes quite a lot of time ...
      * lets do it in the background, not block ui and call a method on callback after finish.
      */
-    private static class SaveCitiesAsync extends AsyncTask<String, Void, Boolean> {
+    private static class SaveCitiesAsync extends AsyncTask<String, Void, Map<String, WPOVCity>> {
         private WeatherFetcherListener mListener;
         private Context mContext;
 
-        public SaveCitiesAsync(Context context, WeatherFetcherListener l) {
+        private WPOVDatabaseHelper dbHelper;
+
+        public SaveCitiesAsync(Context context, WeatherFetcherListener l, WPOVDatabaseHelper dbHelper) {
             this.mContext = context;
+            this.dbHelper = dbHelper;
             mListener = l;
         }
 
         @Override
-        protected Boolean doInBackground(String... params) {
+        protected Map<String, WPOVCity> doInBackground(String... params) {
             String citiesString = params[0];
 
             if (citiesString == null) {
-                if (mListener != null) mListener.citiesLoaded(false);
+                if (mListener != null) mListener.citiesLoaded(null);
                 return null;
             }
 
             Map<String, WPOVCity> cities = WeatherFetcherService.parseCitiesList(citiesString);
-            boolean success = WeatherFetcherService.saveCitiesList(mContext, cities);
+            WeatherFetcherService.saveCitiesList(mContext, cities, dbHelper);
 
-            return true;
+            return cities;
         }
 
         @Override
-        protected void onPostExecute(Boolean success) {
-            if (mListener != null) mListener.citiesLoaded(success);
+        protected void onPostExecute(Map<String, WPOVCity> cities) {
+            if (mListener != null) mListener.citiesLoaded(cities);
         }
     }
 

@@ -19,6 +19,7 @@ import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
 import com.skipper3k.si.weatherpov.helpers.Config;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -78,10 +79,11 @@ public class WeatherPOVActivity extends AppCompatActivity {
          fetch cities list in background
          */
         mWeatherFetcherService.fetchCitiesList(new WeatherFetcherService.WeatherFetcherListener() {
+
             @Override
-            public void citiesLoaded(boolean success) {
+            public void citiesLoaded(Map<String, WPOVCity> cities) {
                 if (Config.DEBUG) {
-                    Snackbar.make(fab, success ? "Cities successfully loaded!" : "Cities load failed!", Snackbar.LENGTH_LONG)
+                    Snackbar.make(fab, cities != null ? "Cities successfully loaded!" : "Cities load failed!", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
                 }
             }

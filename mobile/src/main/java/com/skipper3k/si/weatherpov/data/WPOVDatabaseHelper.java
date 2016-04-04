@@ -91,7 +91,7 @@ public class WPOVDatabaseHelper {
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
 
-        if (Config.DEBUG) Log.i(TAG, "Sqving cities to database took: " + duration/1000000 + " milis.");
+        if (Config.DEBUG) Log.i(TAG, "Saving cities to database took: " + duration/1000000 + " milis.");
         if (Config.DEBUG) Log.i(TAG, "Search for london: " + searchForCity("lond"));
 
         return success;
