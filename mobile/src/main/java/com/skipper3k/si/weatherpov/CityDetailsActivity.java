@@ -7,6 +7,7 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -46,6 +47,8 @@ public class CityDetailsActivity extends AppCompatActivity {
             city = (WPOVCity)intent.getExtras().getSerializable(WeatherPOVActivity.ADD_CITY_STRING);
         }
 
+        getSupportActionBar().setElevation(0f);
+
 
         cityName = (TextView)findViewById(R.id.cityName);
         cityTemp = (TextView)findViewById(R.id.cityTemp);
@@ -53,11 +56,12 @@ public class CityDetailsActivity extends AppCompatActivity {
         cityDescription = (TextView)findViewById(R.id.cityDescription);
         lastUpdated = (TextView)findViewById(R.id.lastUpdated);
 
+
         cityName.setText(city.name);
-        cityTemp.setText((city.temp + "°C"));
-        cityHumidity.setText(city.humidity);
-        cityDescription.setText(city.description);
-        lastUpdated.setText(city.lastUpdated != null ? sdf.format(city.lastUpdated) : "never");
+        cityTemp.setText(Html.fromHtml(getString(R.string.format_celsius, city.temp)));
+        cityHumidity.setText(Html.fromHtml(getString(R.string.format_humidity, city.humidity)));
+        cityDescription.setText((city.description + "."));
+        lastUpdated.setText(Html.fromHtml(getString(R.string.last_updated, city.lastUpdated != null ? sdf.format(city.lastUpdated) : "never")));
 
         if (!mBound) {
             Intent intentService = new Intent(this, WeatherFetcherService.class);

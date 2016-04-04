@@ -19,7 +19,7 @@
         android:id="@+id/cityTemp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="38sp"
+        android:textSize="36sp"
         android:textColor="@android:color/white"
         />
 
@@ -28,7 +28,7 @@
         android:id="@+id/cityHumidity"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="38sp"
+        android:textSize="36sp"
         android:textColor="@android:color/white"
         />
 
@@ -37,7 +37,7 @@
         android:id="@+id/cityDescription"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="38sp"
+        android:textSize="46sp"
         android:textColor="@android:color/white"
         />
 
@@ -46,7 +46,7 @@
         android:id="@+id/lastUpdated"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="38sp"
+        android:textSize="22sp"
         android:textColor="@android:color/white"
         />
 
