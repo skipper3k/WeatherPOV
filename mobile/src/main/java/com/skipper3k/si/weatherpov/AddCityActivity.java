@@ -45,7 +45,7 @@ public class AddCityActivity extends AppCompatActivity {
     private View spinner;
 
     private AutoCompleteTextView searchField;
-    private TextInputLayout textInputLayout;
+    private Button addButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +54,7 @@ public class AddCityActivity extends AppCompatActivity {
 
 
         searchField = (AutoCompleteTextView) findViewById(R.id.searchCity);
-        textInputLayout = (TextInputLayout) findViewById(R.id.textInputLayout);
+
 
         // todo: switch to LoaderManager
         adapter = new SimpleCursorAdapter(this,
@@ -95,8 +95,8 @@ public class AddCityActivity extends AppCompatActivity {
         });
 
 
-        Button add = (Button) findViewById(R.id.addCity);
-        add.setOnClickListener(new View.OnClickListener() {
+        addButton = (Button) findViewById(R.id.addCity);
+        addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (city == null) {
@@ -155,21 +155,18 @@ public class AddCityActivity extends AppCompatActivity {
             if (mWeatherFetcherService.isFETCHING_CITIES()) {
                 spinner.setVisibility(View.VISIBLE);
 
-                searchField.setFocusable(false);
-                textInputLayout.setFocusable(false);
-                textInputLayout.setClickable(false);
+                addButton.setEnabled(false);
             }
 
             mWeatherFetcherService.setmListener(new WeatherFetcherService.WeatherFetcherListener() {
                 @Override
                 public void citiesLoaded(Map<String, WPOVCity> cities) {
+                    addButton.setEnabled(true);
+
                     spinner.setVisibility(View.GONE);
                     Snackbar.make(spinner, "Cities successfully loaded!", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
 
-                    searchField.setFocusable(true);
-                    textInputLayout.setFocusable(true);
-                    textInputLayout.setClickable(true);
                 }
 
                 @Override
