@@ -20,6 +20,15 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".AddCityActivity"
+            android:parentActivityName=".WeatherPOVActivity"
+            android:theme="@style/AppTheme">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".WeatherPOVActivity" />
+        </activity>
+
         <service android:name=".data.WeatherFetcherService" android:stopWithTask="false" />
 
     </application>

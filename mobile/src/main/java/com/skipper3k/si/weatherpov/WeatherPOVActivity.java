@@ -40,6 +40,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
     private WeatherFetcherService mWeatherFetcherService;
     boolean mBound = false;
 
+    private int ADD_CITY_ACTIVITY = 123;
 
     private FloatingActionButton fab;
 
@@ -60,8 +61,11 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
                 if (Config.DEBUG && mBound) {
                     // Acts as a test button too!
-                    if (mWeatherFetcherService != null) mWeatherFetcherService.searchForCity("francisc");
+//                    if (mWeatherFetcherService != null) mWeatherFetcherService.searchForCity("francisc");
                 }
+
+                Intent addCityIntent = new Intent(WeatherPOVActivity.this, AddCityActivity.class);
+                startActivityForResult(addCityIntent, ADD_CITY_ACTIVITY);
             }
         });
 
@@ -110,7 +114,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
         @Override
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
-            // We've bound to LocalService, cast the IBinder and get LocalService instance
+
             WeatherFetcherService.WeatherFetcherServiceBinder binder = (WeatherFetcherService.WeatherFetcherServiceBinder) service;
             mWeatherFetcherService = binder.getService();
             mBound = true;
