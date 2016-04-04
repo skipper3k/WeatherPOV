@@ -78,6 +78,10 @@ public class WeatherFetcherService extends Service {
 
     private WPOVDatabaseHelper dbHelper;
 
+    public boolean isFETCHING_CITIES() {
+        return FETCHING_CITIES;
+    }
+
     private boolean FETCHING_CITIES;
 
     /**
@@ -136,7 +140,12 @@ public class WeatherFetcherService extends Service {
         saveCity(city, false);
     }
     public void saveCity(WPOVCity city, boolean updateWeather) {
-        dbHelper.saveCity(city, updateWeather);
+        try {
+            dbHelper.saveCity(city, updateWeather);
+        } catch (Exception e) {
+            Log.e(TAG, "could not save city to database!", e);
+        }
+
     }
 
     public List<WPOVCity> favouriteCitiesList() {
@@ -158,116 +167,78 @@ public class WeatherFetcherService extends Service {
 
         long citiesCount = dbHelper.getCitiesCount();
         if (citiesCount > 0) {
-            if (Config.DEBUG) Log.i(TAG, "got cities from database: " + citiesCount);
             return;
         }
 
         FETCHING_CITIES = true;
-        RequestHtmlAsString task = new RequestHtmlAsString(new RequestStringListener() {
+        RequestCitiesFile task = new RequestCitiesFile(dbHelper, new WeatherFetcherListener() {
             @Override
-            public void requestFinished(JSONObject json) {
+            public void citiesLoaded(Map<String, WPOVCity> cities) {
+                FETCHING_CITIES = false;
+                if (listener != null) listener.citiesLoaded(cities);
+            }
+
+            @Override
+            public void fetchedWeather(WPOVCity city) {
 
             }
 
             @Override
-            public void requestFinished(JSONArray json) {
+            public void searchFound(List<WPOVCity> cities) {
 
             }
 
             @Override
-            public void requestFinishedString(String html) {
-                SaveCitiesAsync citiesTask = new SaveCitiesAsync(WeatherFetcherService.this, new WeatherFetcherListener() {
-                    @Override
-                    public void citiesLoaded(Map<String, WPOVCity> cities) {
-                        FETCHING_CITIES = false;
-                        if (listener != null) listener.citiesLoaded(cities);
-                    }
+            public void weatherUpdated() {
 
-                    @Override
-                    public void fetchedWeather(WPOVCity city) {
-
-                    }
-
-                    @Override
-                    public void searchFound(List<WPOVCity> cities) {
-
-                    }
-
-                    @Override
-                    public void weatherUpdated() {
-
-                    }
-
-                    @Override
-                    public void errorUpdating() {
-
-                    }
-                }, dbHelper);
-                citiesTask.execute(html);
             }
 
             @Override
-            public void requestFailed() {
-                Log.e(TAG, "Could not fetch a list of cities. Retry in 1 minute.");
+            public void errorUpdating() {
+
             }
         });
         task.execute(cityListURL);
     }
 
-    /**
-     * Parse the text file of all the cities. This is not bulletproof ...
-     *
-     * We only parse the city name and id because it is relevant to this app.
-     * We could make a data structure and save the coordinates as well...
-     *
-     * fixme: slow, add to async processing, because this runs on the main thread and is UI blocking! and find a regex ninja! ...
-     *
-     * @param citiesString list of cities fetched via cityListURL
-     */
-    private static Map<String, WPOVCity> parseCitiesList(String citiesString) {
-        Map<String, WPOVCity> cities = new HashMap<String, WPOVCity>();
+    private static Pattern pId = Pattern.compile("^[0-9]*");
+    private static Pattern pCity = Pattern.compile("^[[a-z] [A-Z]-]*");
+    private static Pattern pCOUNTRY = Pattern.compile(".[A-Z]$");
 
-        long startTime = System.nanoTime();
+    public static WPOVCity parseCityLine(String line) {
+        Matcher matcher = pId.matcher(line);
+        int id = 0;
 
-        String citiesSplit[] = citiesString.split("\\r?\\n");
-
-        Log.i(TAG, "parsing cities! " + citiesSplit.length);
-
-        Pattern pId = Pattern.compile("^[0-9]*");
-        Pattern pCity = Pattern.compile("^[[a-z] [A-Z]-]*");
-
-        for (int i = 1; i < citiesSplit.length; i++) {
-            String line = citiesSplit[i];
-
-            Matcher matcher = pId.matcher(line);
-            int id = 0;
-
-            while (matcher.find()) {
-                line = line.substring(matcher.end(), line.length()).trim();
-                id = Integer.parseInt(matcher.group());
-            }
-
-            Matcher cityMatch = pCity.matcher(line);
-            String city = null;
-
-            while (cityMatch.find()) {
-                city = cityMatch.group();
-            }
-
-            if (id != 0 && city != null) {
-                WPOVCity c = new WPOVCity();
-                c.id = id;
-                c.name = city;
-                cities.put(city, c);
-            }
+        while (matcher.find()) {
+            line = line.substring(matcher.end(), line.length()).trim();
+            id = Integer.parseInt(matcher.group());
         }
 
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);
+        Matcher cityMatch = pCity.matcher(line);
+        String city = null;
 
-        if (Config.DEBUG) Log.i(TAG, "parsing cities took: " + duration / 1000000 + " milis.");
+        while (cityMatch.find()) {
+            city = cityMatch.group();
+        }
 
-        return cities;
+        line = line.replace(city, "");
+        line = line.replace("" + id, "");
+
+        String country = null;
+        Matcher countryMatch = pCOUNTRY.matcher(line);
+        Log.e(TAG, "matcing line: " + line);
+        while (countryMatch.find()) {
+            country = cityMatch.group();
+        }
+
+
+        if (id != 0 && city != null) {
+            WPOVCity c = new WPOVCity();
+            c.id = id;
+            c.name = city + (country != null ? (", " + country) : "");
+            return c;
+        }
+        return null;
     }
 
     /**
@@ -281,39 +252,90 @@ public class WeatherFetcherService extends Service {
     }
 
     /**
-     * downloading, parsing and saving 70k etries takes quite a lot of time ...
-     * lets do it in the background, not block ui and call a method on callback after finish.
+     * Parse the text file of all the cities. This is not bulletproof ...
+     *
+     * We only parse the city name and id because it is relevant to search in cities.
+     * We could make a data structure and save the coordinates as well...
+
      */
-    private static class SaveCitiesAsync extends AsyncTask<String, Void, Map<String, WPOVCity>> {
+    private static class RequestCitiesFile extends AsyncTask<String, Void, String> {
         private WeatherFetcherListener mListener;
-        private Context mContext;
-
         private WPOVDatabaseHelper dbHelper;
-
-        public SaveCitiesAsync(Context context, WeatherFetcherListener l, WPOVDatabaseHelper dbHelper) {
-            this.mContext = context;
+        public RequestCitiesFile(WPOVDatabaseHelper dbHelper, WeatherFetcherListener l) {
             this.dbHelper = dbHelper;
             mListener = l;
         }
 
         @Override
-        protected Map<String, WPOVCity> doInBackground(String... params) {
-            String citiesString = params[0];
+        protected String doInBackground(String... params) {
+            String urlString = params[0];
+            HttpURLConnection connection = getHttpConnectionFromUrl(urlString);
 
-            if (citiesString == null) {
-                if (mListener != null) mListener.citiesLoaded(null);
+            if (connection == null)
                 return null;
+            long startTime = System.nanoTime();
+            InputStream is = getInputStreamFromHttp(connection);
+            try {
+                if (is != null) {
+                    //get response to String
+                    StringBuilder builder = new StringBuilder();
+                    String response = "";
+                    try {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                        String line;
+
+                        try {
+                            dbHelper.beginTransaction();
+
+                            int i = 0;
+                            while ((line = reader.readLine()) != null) {
+                                builder.append(line);
+                                builder.append("\n");
+
+                                if (i == 0) {
+                                    i++;
+                                    continue;
+                                }
+
+                                // process list here
+                                WPOVCity city = parseCityLine(line);
+                                dbHelper.simpleSaveCity(city);
+                                i++;
+                            }
+
+                            dbHelper.setTransactionSuccessful();
+                        } catch (Exception e) {
+                            Log.e(TAG, "failed to load cities!", e);
+                        } finally {
+                            Log.e(TAG, "End Tramsaction!");
+                            dbHelper.endTransaction();
+                        }
+
+                        response = builder.toString();
+
+                        is.close();
+                    } catch (IOException e) {
+                        Log.e(TAG, "Exception getting stream", e);
+                    }
+
+
+                    long endTime = System.nanoTime();
+                    long duration = (endTime - startTime);
+
+                    if (Config.DEBUG) Log.i(TAG, "Downloading and parsing cities took: " + duration / 1000000 + " milis.");
+
+                    //TODO: handle response from server
+                    return response;
+                }
+                return null;
+            } finally {
+                connection.disconnect();
             }
-
-            Map<String, WPOVCity> cities = WeatherFetcherService.parseCitiesList(citiesString);
-            WeatherFetcherService.saveCitiesList(mContext, cities, dbHelper);
-
-            return cities;
         }
 
         @Override
-        protected void onPostExecute(Map<String, WPOVCity> cities) {
-            if (mListener != null) mListener.citiesLoaded(cities);
+        protected void onPostExecute(String s) {
+            if (mListener != null) mListener.citiesLoaded(null);
         }
     }
 
@@ -344,6 +366,9 @@ public class WeatherFetcherService extends Service {
                         while ((line = reader.readLine()) != null) {
                             builder.append(line);
                             builder.append("\n");
+                            Log.e(TAG, "reading line: " + line);
+
+                            // process list here
                         }
 
                         response = builder.toString();
@@ -425,9 +450,12 @@ public class WeatherFetcherService extends Service {
                             /**
                              * just save to db
                              */
-                            dbHelper.saveCity(c, true);
+                            try {
+                                dbHelper.saveCity(c, true);
+                            } catch (Exception e) {
+                                Log.e(TAG, "could not save city to database!", e);
+                            }
                         }
-
                         if (listener != null) listener.weatherUpdated();
                     }
                 } catch (JSONException e) {

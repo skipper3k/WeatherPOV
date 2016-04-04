@@ -13,6 +13,9 @@
 
     <string name="error_fetch">Could not load weather data. Please try again later.</string>
 
+    <string name="downloading">Downloading a list of the cities.</string>
+
+
     <string name="last_updated"><![CDATA[<small><small>Last update:</small></small> %1$s]]></string>
     <string name="format_celsius"><![CDATA[<small><small>Temperature:</small></small> %1$s °C]]></string>
     <string name="format_humidity"><![CDATA[<small><small>Humidity:</small></small> %1$s&#x0025;]]></string>

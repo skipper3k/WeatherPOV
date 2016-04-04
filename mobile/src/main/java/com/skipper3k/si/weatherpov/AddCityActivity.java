@@ -21,6 +21,9 @@ import com.skipper3k.si.weatherpov.data.WPOVDatabase;
 import com.skipper3k.si.weatherpov.data.WPOVDatabaseHelper;
 import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Created by skipper3k on 04/04/16.
  *
@@ -36,6 +39,8 @@ public class AddCityActivity extends AppCompatActivity {
     private SimpleCursorAdapter adapter;
 
     private WPOVCity city;
+
+    private View spinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,6 +108,8 @@ public class AddCityActivity extends AppCompatActivity {
             }
         });
 
+        spinner = findViewById(R.id.loadIndicator);
+
         if (!mBound) {
             Intent intent = new Intent(this, WeatherFetcherService.class);
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
@@ -136,7 +143,36 @@ public class AddCityActivity extends AppCompatActivity {
             mWeatherFetcherService = binder.getService();
             mBound = true;
 
+            if (mWeatherFetcherService.isFETCHING_CITIES()) {
+                spinner.setVisibility(View.VISIBLE);
+            }
 
+            mWeatherFetcherService.setmListener(new WeatherFetcherService.WeatherFetcherListener() {
+                @Override
+                public void citiesLoaded(Map<String, WPOVCity> cities) {
+                    spinner.setVisibility(View.GONE);
+                }
+
+                @Override
+                public void fetchedWeather(WPOVCity city) {
+
+                }
+
+                @Override
+                public void searchFound(List<WPOVCity> cities) {
+
+                }
+
+                @Override
+                public void weatherUpdated() {
+
+                }
+
+                @Override
+                public void errorUpdating() {
+
+                }
+            });
             Log.i(TAG, "service bound");
         }
 

@@ -52,7 +52,7 @@ public class WPOVDatabaseHelper {
      * @param city city object
      * @param updateWeather if the weather data changes set to true
      */
-    public void saveCity(WPOVCity city, boolean updateWeather) {
+    public void saveCity(WPOVCity city, boolean updateWeather) throws Exception {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         final String sqlStatement = "INSERT OR REPLACE INTO " + WPOVDatabase.TABLE_CITY + "("
@@ -85,9 +85,33 @@ public class WPOVDatabaseHelper {
             Log.e(TAG, "cannot update city", e);
         }
 
-
         stmt.close();
     }
+
+    // should reuse statement
+    public void simpleSaveCity(WPOVCity city) {
+        final String sql = " INSERT OR REPLACE INTO " + WPOVDatabase.TABLE_CITY + "("
+                + WPOVDatabase.COLUMN_ID + ", "             // 1
+                + WPOVDatabase.COLUMN_NAME              // 2
+                + " ) VALUES (?1,?2)";
+        SQLiteStatement stmt = connection.compileStatement(sql);
+                stmt.bindLong(1, city.id);
+                stmt.bindString(2, city.name.trim());
+                stmt.execute();
+    }
+
+
+    public void beginTransaction() {
+        connection.beginTransaction();
+    }
+    public void setTransactionSuccessful() {
+        connection.setTransactionSuccessful();
+    }
+    public void endTransaction() {
+        connection.endTransaction();
+    }
+
+
 
     /**
      * Construct a list of favoured cities to display in recycle viewer.
