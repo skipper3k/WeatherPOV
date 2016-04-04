@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
@@ -23,15 +24,12 @@ import java.util.Map;
 public class WPOVDatabaseHelper {
     private static final String TAG = WPOVDatabaseHelper.class.getSimpleName();
 
-    public void saveCity(WPOVDatabase db, WPOVCity city) {
-
-    }
-
     public void updateCity(WPOVDatabase db, WPOVCity city) {
 
     }
 
     private String[] allColumns = {
+            "id",
             WPOVDatabase.COLUMN_OWM_ID,
             WPOVDatabase.COLUMN_NAME,
             WPOVDatabase.COLUMN_TEMP,
@@ -39,6 +37,18 @@ public class WPOVDatabaseHelper {
             WPOVDatabase.COLUMN_DESCRIPTION,
             WPOVDatabase.COLUMN_LAST_UPDATED
             };
+
+    private SQLiteDatabase connection;
+
+    public WPOVDatabaseHelper(Context context) {
+        WPOVDatabase database = new WPOVDatabase(context);
+        connection = database.getWritableDatabase();
+    }
+
+    public void closeConnections() {
+        connection.close();
+    }
+
 
     /**
      * This is a bulk save of the cities...
@@ -52,10 +62,7 @@ public class WPOVDatabaseHelper {
         if (Config.DEBUG) Log.i(TAG, "Saving to database.");
         long startTime = System.nanoTime();
 
-        WPOVDatabase database = new WPOVDatabase(context);
-        SQLiteDatabase db = database.getWritableDatabase();
-
-        db.beginTransaction();
+        connection.beginTransaction();
 
         boolean success = true;
 
@@ -63,24 +70,21 @@ public class WPOVDatabaseHelper {
                 + " owmid,"             // 1
                 + " name"              // 2
                 + " ) VALUES (?1,?2)";
-        SQLiteStatement stmt = db.compileStatement(sql);
+        SQLiteStatement stmt = connection.compileStatement(sql);
+        connection.beginTransaction();
 
-        db.beginTransaction();
         try {
-            try {
-                for (WPOVCity city : cities.values()) {
-                    stmt.bindString(1, city.id);
-                    stmt.bindString(2, city.name);
-                    stmt.execute();
-                }
-
-                db.setTransactionSuccessful();
-
-            } catch (SQLiteException e) {
-                success = false;
+            for (WPOVCity city : cities.values()) {
+                stmt.bindString(1, city.id);
+                stmt.bindString(2, city.name);
+                stmt.execute();
             }
-        } finally {
-            db.endTransaction();
+
+            connection.setTransactionSuccessful();
+        } catch (SQLiteException e) {
+            success = false;
+        }  finally {
+            connection.endTransaction();
             stmt.close();
         }
 
@@ -88,31 +92,52 @@ public class WPOVDatabaseHelper {
         long duration = (endTime - startTime);
 
         if (Config.DEBUG) Log.i(TAG, "Sqving cities to database took: " + duration/1000000 + " milis.");
+        if (Config.DEBUG) Log.i(TAG, "Search for london: " + searchForCity("lond"));
 
-        db.close();
         return success;
     }
 
     /**
      *
-     * @param context
      * @return number of cities in the database
      */
-    public long getCitiesCount(Context context) {
-        WPOVDatabase database = new WPOVDatabase(context);
-        SQLiteDatabase db = database.getReadableDatabase();
+    public long getCitiesCount() {
+        return DatabaseUtils.queryNumEntries(connection, WPOVDatabase.TABLE_CITY);
+    }
 
-        long cnt  = DatabaseUtils.queryNumEntries(db, WPOVDatabase.TABLE_CITY);
-        db.close();
-        return cnt;
+    /**
+     * Search for city
+     * @param city city string
+     * @return
+     */
+    public Cursor searchForCity(String city) {
+        SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+        builder.setTables(WPOVDatabase.TABLE_CITY);
+
+        String selection = WPOVDatabase.COLUMN_NAME + " LIKE ?";
+        String[] selectionArgs = new String[] { city + "%"};
+
+        Cursor cursor = builder.query(connection,
+                null, selection, selectionArgs, null, null, null);
+
+        if (cursor == null) {
+            return null;
+        } else if (!cursor.moveToFirst()) {
+            cursor.close();
+            return null;
+        }
+
+        while (cursor.moveToNext()) {
+            WPOVCity cityPOJO = cursorToCity(cursor);
+            Log.i(TAG, "Found city: " + cityPOJO.id + " name: " + cityPOJO.name);
+        }
+
+        return cursor;
     }
 
 
     public WPOVCity getCityFromDB(Context context, String id) {
-        WPOVDatabase database = new WPOVDatabase(context);
-        SQLiteDatabase db = database.getReadableDatabase();
-
-        Cursor cursor = db.query(WPOVDatabase.TABLE_CITY,
+        Cursor cursor = connection.query(WPOVDatabase.TABLE_CITY,
                 allColumns, null, null, null, null, null, null);
 
         cursor.moveToFirst();
@@ -121,12 +146,9 @@ public class WPOVDatabaseHelper {
 
 
     public Map<String, WPOVCity> getCitiesFromDB(Context context) {
-        WPOVDatabase database = new WPOVDatabase(context);
-        SQLiteDatabase db = database.getReadableDatabase();
-
         Map<String, WPOVCity> cities = new HashMap<String, WPOVCity>();
 
-        Cursor cursor = db.query(WPOVDatabase.TABLE_CITY,
+        Cursor cursor = connection.query(WPOVDatabase.TABLE_CITY,
                 allColumns, null, null, null, null, null, null);
 
         cursor.moveToFirst();
@@ -145,14 +167,16 @@ public class WPOVDatabaseHelper {
 
         WPOVCity city = new WPOVCity();
 
-        city.id = cursor.getString(0);
-        city.name = cursor.getString(1);
-        city.temp = cursor.getInt(2);
-        city.humidity = cursor.getInt(3);
-        city.description = cursor.getString(4);
+        city.id = cursor.getString(1);
+        city.name = cursor.getString(2);
+        city.temp = cursor.getInt(3);
+        city.humidity = cursor.getInt(4);
+        city.description = cursor.getString(5);
 
         try {
-            city.lastUpdated = sdf.parse(cursor.getString(5));
+            if (cursor.getString(6) != null) {
+                city.lastUpdated = sdf.parse(cursor.getString(6));
+            }
         } catch (ParseException e) {
 
         }

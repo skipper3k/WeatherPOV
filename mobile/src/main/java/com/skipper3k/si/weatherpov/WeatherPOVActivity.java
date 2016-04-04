@@ -63,6 +63,13 @@ public class WeatherPOVActivity extends AppCompatActivity {
                 }
             }
         });
+
+
+        if (!mBound) {
+            Intent intent = new Intent(this, WeatherFetcherService.class);
+            startService(intent);
+            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
 
@@ -118,22 +125,10 @@ public class WeatherPOVActivity extends AppCompatActivity {
         }
     };
 
-    /**
-     * override so we can start the weather fetcher service
-     */
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if (!mBound) {
-            Intent intent = new Intent(this, WeatherFetcherService.class);
-            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-        }
-    }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-
+    protected void onDestroy() {
+        super.onDestroy();
         if (mBound) {
             unbindService(mConnection);
             mBound = false;

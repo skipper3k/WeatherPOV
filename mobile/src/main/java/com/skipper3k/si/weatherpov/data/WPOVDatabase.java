@@ -18,6 +18,7 @@ public class WPOVDatabase extends SQLiteOpenHelper {
     }
 
     public static final String TABLE_CITY = "city";
+
     public static final String COLUMN_ID = "id";
     public static final String COLUMN_OWM_ID = "owmid";
     public static final String COLUMN_NAME = "name";

@@ -74,6 +74,7 @@ public class WeatherFetcherService extends Service {
      */
     private static final String API_KEY = "79bfc35c0e64f6e2364384b6b2f5a1f3";
 
+    private WPOVDatabaseHelper dbHelper;
 
     private boolean FETCHING_CITIES;
 
@@ -102,11 +103,18 @@ public class WeatherFetcherService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e(TAG, "Starting service!");
+        if (dbHelper == null) {
+            dbHelper = new WPOVDatabaseHelper(getApplicationContext());
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
-
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.e(TAG, "Destroy service!");
+        dbHelper.closeConnections();
+    }
 
     /**
      *
@@ -120,21 +128,25 @@ public class WeatherFetcherService extends Service {
      * we get the list of cities every now and then and save it locally for further use
      */
     public void fetchCitiesList(final WeatherFetcherListener listener) {
+
         /**
          * Load cities from db or the web ...
          */
 
-        if (Config.DEBUG) Log.i(TAG, "Fetching cities");
+        long citiesCount = dbHelper.getCitiesCount();
+        if (Config.DEBUG) Log.i(TAG, "Fetching cities db: " + citiesCount);
 
-        WPOVDatabaseHelper db = new WPOVDatabaseHelper();
-        long citiesCount = db.getCitiesCount(this);
+        if (Config.DEBUG) Log.i(TAG, "Fetching cities: " + FETCHING_CITIES);
+        if (FETCHING_CITIES) return;
+
+
 
         if (citiesCount > 0) {
             if (Config.DEBUG) Log.i(TAG, "got cities from database: " + citiesCount);
             return;
         }
 
-        if (FETCHING_CITIES) return;
+
 
         FETCHING_CITIES = true;
         RequestHtmlAsString task = new RequestHtmlAsString(new RequestStringListener() {
@@ -196,11 +208,11 @@ public class WeatherFetcherService extends Service {
                 id = matcher.group();
             }
 
-            Matcher citiMatch = pCity.matcher(line);
+            Matcher cityMatch = pCity.matcher(line);
             String city = null;
 
-            while (citiMatch.find()) {
-                city = citiMatch.group();
+            while (cityMatch.find()) {
+                city = cityMatch.group();
             }
 
             if (id != null && city != null) {
@@ -227,10 +239,11 @@ public class WeatherFetcherService extends Service {
      */
     private static boolean saveCitiesList(Context context, Map<String, WPOVCity> citiesList) {
         Log.i(TAG, "Saving cities to database!");
-        WPOVDatabaseHelper db = new WPOVDatabaseHelper();
-        return db.saveCities(context, citiesList);
+        WPOVDatabaseHelper dbHelper = new WPOVDatabaseHelper(context);
+        boolean success = dbHelper.saveCities(context, citiesList);
+        dbHelper.closeConnections();
+        return success;
     }
-
 
     /**
      * downloading, parsing and saving 70k etries takes quite a lot of time ...
@@ -262,7 +275,7 @@ public class WeatherFetcherService extends Service {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (mListener != null) mListener.citiesLoaded(success.booleanValue());
+            if (mListener != null) mListener.citiesLoaded(success);
         }
     }
 
