@@ -85,7 +85,6 @@ public class WeatherPOVActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-
         rootView = findViewById(R.id.root_view);
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -93,14 +92,6 @@ public class WeatherPOVActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, mBound ? "Service is connected." : "Service is not connected.", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-
-                if (Config.DEBUG && mBound) {
-                    // Acts as a test button too!
-//                    if (mWeatherFetcherService != null) mWeatherFetcherService.searchForCity("francisc");
-                }
-
                 Intent addCityIntent = new Intent(WeatherPOVActivity.this, AddCityActivity.class);
                 startActivityForResult(addCityIntent, ADD_CITY_ACTIVITY);
             }
