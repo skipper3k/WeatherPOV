@@ -57,7 +57,13 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
     private View rootView;
 
+    /**
+     * view for empty list
+     */
     private View mNoList;
+    /**
+     * Recyclerview for displaying and editing the list of cities
+     */
     private RecyclerView mCitiesList;
 
     private CitiesRecyclerViewAdapter mAdapter;
@@ -209,6 +215,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
             mAdapter.setData(citiesList);
             mAdapter.notifyDataSetChanged();
 
+
             mWeatherFetcherService.fetchCitiesWeather(citiesList, new WeatherFetcherService.WeatherFetcherListener() {
                 @Override
                 public void citiesLoaded(Map<String, WPOVCity> cities) {
@@ -228,7 +235,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
                 @Override
                 public void weatherUpdated() {
                     // refetch data from db
-                    fetchFavouriteCities();
+//                    fetchFavouriteCities();
                 }
 
                 @Override
