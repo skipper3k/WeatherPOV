@@ -128,7 +128,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
         /**
          * init with an empty list and populate after we get the data...
          */
-        mAdapter = new CitiesRecyclerViewAdapter(new ArrayList<WPOVCity>());
+        mAdapter = new CitiesRecyclerViewAdapter(new ArrayList<WPOVCity>(), this);
         mCitiesList.setAdapter(mAdapter);
 
 
@@ -201,6 +201,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
         itemTouchHelper.attachToRecyclerView(mCitiesList);
+
+
 
 
 

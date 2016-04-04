@@ -21,10 +21,10 @@ import java.util.Map;
 /**
  * Created by skipper3k on 03/04/16.
  *
+ *  Database helper class. Here we manipulate with data.
  */
 public class WPOVDatabaseHelper {
     private static final String TAG = WPOVDatabaseHelper.class.getSimpleName();
-
 
     public WPOVDatabaseHelper(Context context) {
         WPOVDatabase database = new WPOVDatabase(context);
@@ -44,7 +44,6 @@ public class WPOVDatabaseHelper {
             WPOVDatabase.COLUMN_LAST_UPDATED,
             WPOVDatabase.COLUMN_FAVORED
     };
-
 
     /**
      * updates an existig city or adds a cutom one to the database
@@ -91,7 +90,8 @@ public class WPOVDatabaseHelper {
     }
 
     /**
-     * Construct a list of favoured cities to display in recycle viewe
+     * Construct a list of favoured cities to display in recycle viewer.
+     * Could also use just the cursor...
      *
      * @return Custom array list with favoured cities and weather data
      */
