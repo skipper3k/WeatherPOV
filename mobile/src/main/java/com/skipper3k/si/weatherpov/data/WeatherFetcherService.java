@@ -19,9 +19,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -469,7 +471,7 @@ public class WeatherFetcherService extends Service {
          */
         String url = API_BASE_URL + "/data/2.5/group?id=";
         for (int i = 0; i < cities.size(); i ++) {
-            url += cities.get(i).id + ((i + 1 == cities.size()) ? "" : ",");
+            url +=  cities.get(i).id + ((i + 1 == cities.size()) ? "" : ",");
         }
         url += "&units=metric&appid=" + API_KEY;
 
@@ -511,7 +513,11 @@ public class WeatherFetcherService extends Service {
         });
         String url = API_BASE_URL + "/data/2.5/weather?q=";
         for (int i = 0; i < cities.size(); i ++) {
-            url += cities.get(i).name + ((i + 1 == cities.size()) ? "" : ",");
+            try {
+                url += URLEncoder.encode(cities.get(i).name, "utf-8") + ((i + 1 == cities.size()) ? "" : ",");
+            } catch (UnsupportedEncodingException e) {
+                Log.e(TAG, "could not create url params", e);
+            }
         }
         url += "&units=metric&appid=" + API_KEY;
 
