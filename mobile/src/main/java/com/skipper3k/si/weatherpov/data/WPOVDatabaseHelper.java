@@ -69,7 +69,7 @@ public class WPOVDatabaseHelper {
 
         boolean success = true;
 
-        final String sql = " INSERT OR REPLACE INTO " + WPOVDatabase.TABLE_CITY + "("
+        final String sql = " INSERT INTO " + WPOVDatabase.TABLE_CITY + "("
                 + " owmid,"             // 1
                 + " name"              // 2
                 + " ) VALUES (?1,?2)";
@@ -78,16 +78,16 @@ public class WPOVDatabaseHelper {
 
         try {
             for (WPOVCity city : cities.values()) {
-                stmt.bindString(1, city.id);
-                stmt.bindString(2, city.name);
-                stmt.execute();
+                ContentValues values = cityToValues(city);
+
+                connection.insert(WPOVDatabase.TABLE_CITY, null,
+                        values);
             }
 
             connection.setTransactionSuccessful();
         } catch (SQLiteException e) {
             success = false;
         }  finally {
-
             connection.endTransaction();
         }
 

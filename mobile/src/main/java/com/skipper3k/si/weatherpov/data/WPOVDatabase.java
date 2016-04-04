@@ -22,20 +22,22 @@ public class WPOVDatabase extends SQLiteOpenHelper {
     public static final String COLUMN_ID = "id";
     public static final String COLUMN_OWM_ID = "owmid";
     public static final String COLUMN_NAME = "name";
-    public static final String COLUMN_TEMP = "temp";
+    public static final String COLUMN_TEMP = "temperature";
     public static final String COLUMN_HUMIDITY = "humidity";
     public static final String COLUMN_DESCRIPTION = "description";
     public static final String COLUMN_LAST_UPDATED = "updated";
+    public static final String COLUMN_FAVORED = "favoured";
+
 
     private static final String DATABASE_NAME = "cities.db";
     private static final int DATABASE_VERSION = 1;
 
     // todo_tag table create statement
-    private static final String CREATE_TABLE_CITY = "CREATE TABLE "
-            + TABLE_CITY + "(" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-            + COLUMN_OWM_ID + " text," + COLUMN_NAME + " text,"
-            + COLUMN_TEMP + " integer," + COLUMN_HUMIDITY + " integer,"
-            + COLUMN_DESCRIPTION + " text,"
+    private static final String CREATE_TABLE_CITY = "CREATE TABLE IF NOT EXISTS "
+            + TABLE_CITY + "(" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+            + COLUMN_OWM_ID + " text, " + COLUMN_NAME + " text, "
+            + COLUMN_TEMP + " integer, " + COLUMN_HUMIDITY + " integer, "
+            + COLUMN_DESCRIPTION + " text, "
             + COLUMN_LAST_UPDATED + " TIMESTAMP)";
 
 

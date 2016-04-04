@@ -14,7 +14,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.EditText;
 
 import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
 
