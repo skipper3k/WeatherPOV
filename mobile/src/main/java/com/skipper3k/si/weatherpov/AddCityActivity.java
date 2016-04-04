@@ -10,17 +10,15 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AppCompatActivity;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.FilterQueryProvider;
 
+import com.skipper3k.si.weatherpov.data.WPOVCity;
 import com.skipper3k.si.weatherpov.data.WPOVDatabase;
+import com.skipper3k.si.weatherpov.data.WPOVDatabaseHelper;
 import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
 
 /**
@@ -35,11 +33,9 @@ public class AddCityActivity extends AppCompatActivity {
     private WeatherFetcherService mWeatherFetcherService;
     boolean mBound = false;
 
-
-    private String city;
-
-
     private SimpleCursorAdapter adapter;
+
+    private WPOVCity city;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,7 +74,9 @@ public class AddCityActivity extends AppCompatActivity {
         adapter.setCursorToStringConverter(new SimpleCursorAdapter.CursorToStringConverter() {
             @Override
             public CharSequence convertToString(Cursor c) {
-                return c.getString(c.getColumnIndexOrThrow(WPOVDatabase.COLUMN_NAME));
+                String cityName = c.getString(c.getColumnIndexOrThrow(WPOVDatabase.COLUMN_NAME));
+                city = WPOVDatabaseHelper.cursorToCity(c);
+                return cityName;
             }
         });
 
@@ -90,6 +88,15 @@ public class AddCityActivity extends AppCompatActivity {
                 Intent resultIntent = new Intent();
                 resultIntent.putExtra(WeatherPOVActivity.ADD_CITY_STRING, city);
                 setResult(Activity.RESULT_OK, resultIntent);
+
+
+                if (mWeatherFetcherService != null) {
+                    // save as favoured
+                    city.favoured = true;
+                    mWeatherFetcherService.saveCity(city);
+                }
+
+
                 finish();
             }
         });
@@ -99,7 +106,6 @@ public class AddCityActivity extends AppCompatActivity {
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         }
     }
-
 
     @Override
     protected void onDestroy() {

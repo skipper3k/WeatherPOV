@@ -129,9 +129,21 @@ public class WeatherFetcherService extends Service {
         return dbHelper.searchForCity(searchString);
     }
 
+    public void saveCity(WPOVCity city) {
+        saveCity(city, false);
+    }
+    public void saveCity(WPOVCity city, boolean updateWeather) {
+        dbHelper.saveCity(city, updateWeather);
+    }
+
+    public List<WPOVCity> favouriteCitiesList() {
+        return  dbHelper.favouredCitiesList();
+    }
 
     /**
      * we get the list of cities every now and then and save it locally for further use
+     *
+     * fixme: do not create a map - save directly after response returns a list of the cities!
      */
     public void fetchCitiesList(final WeatherFetcherListener listener) {
 

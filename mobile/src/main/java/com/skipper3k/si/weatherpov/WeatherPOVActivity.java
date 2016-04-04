@@ -16,6 +16,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.skipper3k.si.weatherpov.data.WPOVCity;
+import com.skipper3k.si.weatherpov.data.WPOVDatabase;
 import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
 import com.skipper3k.si.weatherpov.helpers.Config;
 
@@ -34,6 +35,8 @@ import java.util.Map;
  *
  */
 public class WeatherPOVActivity extends AppCompatActivity {
+    private static final String TAG = WeatherPOVActivity.class.getSimpleName();
+
     /**
      *  This is the main fetcher service. This is where we get the data from.
      */
@@ -79,6 +82,15 @@ public class WeatherPOVActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * get all saved cities from db and add them to the recyclerviewe adapter
+     */
+    private void fetchFavouriteCities() {
+        List<WPOVCity> cities = mWeatherFetcherService.favouriteCitiesList();
+        for (WPOVCity city : cities) {
+            Log.i(TAG, "favourite city: " + city.name);
+        }
+    }
 
     private void fetchCities() {
         /**
@@ -114,12 +126,18 @@ public class WeatherPOVActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 // refresh list !
                 if (data != null) {
-                    Snackbar.make(fab, "You added " + data.getExtras().getString(ADD_CITY_STRING), Snackbar.LENGTH_LONG)
+
+                    WPOVCity citi = (WPOVCity)data.getExtras().getSerializable(ADD_CITY_STRING);
+                    Log.i(TAG, "citi: " + citi.name + " fav: " + citi.favoured);
+
+                    /**
+                     * todo: undo action
+                     */
+                    Snackbar.make(fab, "You added " + citi.name, Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
 
-                    if (mWeatherFetcherService != null) mWeatherFetcherService.searchForCity(data.getExtras().getString(ADD_CITY_STRING));
+                    fetchFavouriteCities();
                 }
-
             }
         }
     }
@@ -138,6 +156,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
             mBound = true;
 
             fetchCities();
+            fetchFavouriteCities();
         }
 
         @Override
