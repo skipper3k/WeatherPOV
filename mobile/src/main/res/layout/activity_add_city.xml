@@ -1,19 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:focusable="true"
+    android:paddingTop="15dp"
+    android:focusableInTouchMode="true">
 
-    <TextInputLayout
+    <android.support.design.widget.TextInputLayout
+        android:padding="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <EditText
+        <AutoCompleteTextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/City"
             android:id="@+id/searchCity" />
 
-    </TextInputLayout>
+    </android.support.design.widget.TextInputLayout>
 
+    <Button
+        android:id="@+id/addCity"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:padding="10dp"
+        android:layout_margin="10dp"
+        android:text="@string/addCity"
+        style="@style/Widget.AppCompat.Button.Colored"
+        />
 
 </LinearLayout>

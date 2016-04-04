@@ -1,5 +1,6 @@
 package com.skipper3k.si.weatherpov;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -7,10 +8,12 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.View;
+import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.EditText;
 
 import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
@@ -28,17 +31,14 @@ public class AddCityActivity extends AppCompatActivity {
     boolean mBound = false;
 
 
+    private String city;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_city);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-
-        EditText searchField = (EditText) findViewById(R.id.searchCity);
-
+        AutoCompleteTextView searchField = (AutoCompleteTextView) findViewById(R.id.searchCity);
         searchField.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -47,15 +47,31 @@ public class AddCityActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                Log.i(TAG, "text changed: " + s);
+
             }
 
             @Override
             public void afterTextChanged(Editable s) {
-                Log.i(TAG, "text changed: " + s);
+                Log.i(TAG, "search: " + s);
+                city = s.toString();
+                if (mWeatherFetcherService != null) {
+                    if (s.length() > 2)
+                        mWeatherFetcherService.searchForCity(s.toString());
+                }
+            }
+
+            });
+
+        Button add = (Button) findViewById(R.id.addCity);
+        add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra(WeatherPOVActivity.ADD_CITY_STRING, city);
+                setResult(Activity.RESULT_OK, resultIntent);
+                finish();
             }
         });
-
 
         if (!mBound) {
             Intent intent = new Intent(this, WeatherFetcherService.class);
@@ -67,6 +83,7 @@ public class AddCityActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
         if (mBound) {
             unbindService(mConnection);
             mBound = false;

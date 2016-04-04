@@ -10,6 +10,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -33,7 +34,6 @@ import java.util.Map;
  *
  */
 public class WeatherPOVActivity extends AppCompatActivity {
-
     /**
      *  This is the main fetcher service. This is where we get the data from.
      */
@@ -41,6 +41,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
     boolean mBound = false;
 
     private int ADD_CITY_ACTIVITY = 123;
+
+    public static String ADD_CITY_STRING = "add.city";
 
     private FloatingActionButton fab;
 
@@ -104,6 +106,22 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == ADD_CITY_ACTIVITY) {
+            if (resultCode == RESULT_OK) {
+                // refresh list !
+                if (data != null) {
+                    Snackbar.make(fab, "You added " + data.getExtras().getString(ADD_CITY_STRING), Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+
+                    if (mWeatherFetcherService != null) mWeatherFetcherService.searchForCity(data.getExtras().getString(ADD_CITY_STRING));
+                }
+
+            }
+        }
     }
 
     /**
