@@ -5,16 +5,22 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.FilterQueryProvider;
 
+import com.skipper3k.si.weatherpov.data.WPOVDatabase;
 import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
 
 /**
@@ -32,34 +38,50 @@ public class AddCityActivity extends AppCompatActivity {
 
     private String city;
 
+
+    private SimpleCursorAdapter adapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_city);
 
-        AutoCompleteTextView searchField = (AutoCompleteTextView) findViewById(R.id.searchCity);
-        searchField.addTextChangedListener(new TextWatcher() {
+        final AutoCompleteTextView searchField = (AutoCompleteTextView) findViewById(R.id.searchCity);
+
+        adapter = new SimpleCursorAdapter(this,
+                android.R.layout.simple_list_item_1,
+                null,
+                new String[] { "name" },
+                new int[] { android.R.id.text1 });
+
+        searchField.setAdapter(adapter);
+
+        /**
+         * the proper way to repopulate dropdown list
+         */
+        adapter.setFilterQueryProvider(new FilterQueryProvider() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            public Cursor runQuery(CharSequence constraint) {
+                if (constraint == null || constraint.equals(""))
+                    return adapter.getCursor();
 
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                Log.i(TAG, "search: " + s);
-                city = s.toString();
                 if (mWeatherFetcherService != null) {
-                    if (s.length() > 2)
-                        mWeatherFetcherService.searchForCity(s.toString());
+                    /** makes no sense querying by a single letter or two.. too many results */
+                    if (constraint.length() > 2) {
+                        return mWeatherFetcherService.searchForCity(constraint.toString());
+                    }
                 }
-            }
 
-            });
+                return adapter.getCursor();
+            }
+        });
+        adapter.setCursorToStringConverter(new SimpleCursorAdapter.CursorToStringConverter() {
+            @Override
+            public CharSequence convertToString(Cursor c) {
+                return c.getString(c.getColumnIndexOrThrow(WPOVDatabase.COLUMN_NAME));
+            }
+        });
+
 
         Button add = (Button) findViewById(R.id.addCity);
         add.setOnClickListener(new View.OnClickListener() {

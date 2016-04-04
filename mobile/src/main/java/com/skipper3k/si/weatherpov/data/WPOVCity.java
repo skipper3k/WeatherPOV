@@ -15,4 +15,6 @@ public class WPOVCity {
     public String description;
     public Date lastUpdated;
 
+    public boolean favoured;
+
 }

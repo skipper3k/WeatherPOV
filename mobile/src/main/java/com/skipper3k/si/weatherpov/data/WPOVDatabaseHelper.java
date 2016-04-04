@@ -14,7 +14,10 @@ import com.skipper3k.si.weatherpov.helpers.Config;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,8 +27,55 @@ import java.util.Map;
 public class WPOVDatabaseHelper {
     private static final String TAG = WPOVDatabaseHelper.class.getSimpleName();
 
-    public void updateCity(WPOVDatabase db, WPOVCity city) {
+    /**
+     * updates an existig city or adds a cutom one to the database
+     *
+     * @param city city object
+     * @param updateWeather if the weather data changes set to true
+     */
+    public void saveCity(WPOVCity city, boolean updateWeather) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+        final String sql = " INSERT OR REPLACE INTO " + WPOVDatabase.TABLE_CITY + "("
+                + WPOVDatabase.COLUMN_OWM_ID + ", "
+                + WPOVDatabase.COLUMN_NAME + ", "
+                + WPOVDatabase.COLUMN_TEMP + ", "
+                + WPOVDatabase.COLUMN_HUMIDITY + ", "
+                + WPOVDatabase.COLUMN_DESCRIPTION + ", "
+                + WPOVDatabase.COLUMN_LAST_UPDATED + ", "
+                + WPOVDatabase.COLUMN_FAVORED + ", "             // 1// 2
+                + " ) VALUES (?1,?2, ?3, ?4, ?5, ?6, ?7)";
+
+        SQLiteStatement stmt = connection.compileStatement(sql);
+
+        stmt.bindString(1, city.id);
+        stmt.bindString(2, city.name.trim());
+        stmt.bindLong(3, city.temp);
+        stmt.bindLong(4, city.humidity);
+        stmt.bindString(5, city.description);
+        if (updateWeather) {
+            stmt.bindString(6, sdf.format(new Date()));
+        } else {
+            stmt.bindString(6, city.lastUpdated != null ? sdf.format(city.lastUpdated) : "");
+        }
+        stmt.bindLong(7, city.favoured ? 1 : 0);
+        stmt.execute();
+    }
+
+    public List<WPOVCity> favouredCities() {
+        List<WPOVCity> cities = new ArrayList<WPOVCity>();
+        Cursor cursor = connection.query(WPOVDatabase.TABLE_CITY,
+                allColumns, null, null, null, null, null, null);
+
+        cursor.moveToFirst();
+        while (!cursor.isAfterLast()) {
+            WPOVCity city = cursorToCity(cursor);
+            cities.add(city);
+            cursor.moveToNext();
+        }
+        cursor.close();
+
+        return cities;
     }
 
     private String[] allColumns = {
@@ -35,7 +85,8 @@ public class WPOVDatabaseHelper {
             WPOVDatabase.COLUMN_TEMP,
             WPOVDatabase.COLUMN_HUMIDITY,
             WPOVDatabase.COLUMN_DESCRIPTION,
-            WPOVDatabase.COLUMN_LAST_UPDATED
+            WPOVDatabase.COLUMN_LAST_UPDATED,
+            WPOVDatabase.COLUMN_FAVORED
             };
 
     private SQLiteDatabase connection;
@@ -67,7 +118,7 @@ public class WPOVDatabaseHelper {
 
         boolean success = true;
 
-        final String sql = " INSERT INTO " + WPOVDatabase.TABLE_CITY + "("
+        final String sql = " INSERT OR REPLACE INTO " + WPOVDatabase.TABLE_CITY + "("
                 + WPOVDatabase.COLUMN_OWM_ID + ", "             // 1
                 + WPOVDatabase.COLUMN_NAME              // 2
                 + " ) VALUES (?1,?2)";
@@ -78,7 +129,7 @@ public class WPOVDatabaseHelper {
         try {
             for (WPOVCity city : cities.values()) {
                 stmt.bindString(1, city.id);
-                stmt.bindString(2, city.name);
+                stmt.bindString(2, city.name.trim());
                 stmt.execute();
             }
 
@@ -118,10 +169,15 @@ public class WPOVDatabaseHelper {
         builder.setTables(WPOVDatabase.TABLE_CITY);
 
         String selection = "lower(" + WPOVDatabase.COLUMN_NAME + ") LIKE ?";
-        String[] selectionArgs = new String[] { "%" + city.toLowerCase().trim() + "%"};
+        String[] selectionArgs = new String[] { "%" + city.toLowerCase() + "%"};
 
+        String[] projection = new String[] { "id as _id", "name", "owmid" };
+
+        /**
+         * limit to 10 for now
+         */
         Cursor cursor = builder.query(connection,
-                null, selection, selectionArgs, null, null, null);
+                projection, selection, selectionArgs, null, null, null, "15");
 
         if (cursor == null) {
             Log.e(TAG, "nothing found");
@@ -130,11 +186,6 @@ public class WPOVDatabaseHelper {
             cursor.close();
             Log.e(TAG, "nothing found");
             return null;
-        }
-
-        while (cursor.moveToNext()) {
-            WPOVCity cityPOJO = cursorToCity(cursor);
-            Log.i(TAG, "Found city: " + cityPOJO.id + " name: " + cityPOJO.name);
         }
 
         return cursor;
@@ -185,6 +236,8 @@ public class WPOVDatabaseHelper {
         } catch (ParseException e) {
 
         }
+
+        city.favoured = cursor.getInt(7) != 0;
 
         return city;
     }
