@@ -92,17 +92,19 @@ public class AddCityActivity extends AppCompatActivity {
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (city == null) {
+                    city = new WPOVCity();
+                    city.favoured = true;
+                    city.name = searchField.getText().toString();
+                }
+
                 Intent resultIntent = new Intent();
                 resultIntent.putExtra(WeatherPOVActivity.ADD_CITY_STRING, city);
                 setResult(Activity.RESULT_OK, resultIntent);
 
-
                 if (mWeatherFetcherService != null) {
-                    // save as favoured
-                    city.favoured = true;
                     mWeatherFetcherService.saveCity(city);
                 }
-
 
                 finish();
             }

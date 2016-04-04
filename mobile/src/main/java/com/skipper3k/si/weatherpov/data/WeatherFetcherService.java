@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +68,7 @@ public class WeatherFetcherService extends Service {
      * No API call for cities?
      *  - http://stackoverflow.com/questions/16560350/how-to-populate-a-jquery-mobile-list-view-of-cities-from-open-weather-map-api
      *
+     * todo: do not download, try to include it
      *
      */
     private static final String cityListURL = "http://openweathermap.org/help/city_list.txt";
@@ -124,13 +126,7 @@ public class WeatherFetcherService extends Service {
         dbHelper.closeConnections();
     }
 
-    /**
-     *
-     * @param cid
-     */
-    public void fetchWeatherForCityId(String cid) {
 
-    }
 
     public Cursor searchForCity(String searchString) {
         return dbHelper.searchForCity(searchString);
@@ -256,7 +252,8 @@ public class WeatherFetcherService extends Service {
      *
      * We only parse the city name and id because it is relevant to search in cities.
      * We could make a data structure and save the coordinates as well...
-
+     *
+     * this could be an example of a long running async task
      */
     private static class RequestCitiesFile extends AsyncTask<String, Void, String> {
         private WeatherFetcherListener mListener;
@@ -366,8 +363,6 @@ public class WeatherFetcherService extends Service {
                         while ((line = reader.readLine()) != null) {
                             builder.append(line);
                             builder.append("\n");
-                            Log.e(TAG, "reading line: " + line);
-
                             // process list here
                         }
 
@@ -422,41 +417,28 @@ public class WeatherFetcherService extends Service {
                 try {
                     if (json.has("list")) {
                         JSONArray list = json.getJSONArray("list");
-                        for (int i = 0; i < list.length(); i++) {
-                            JSONObject weather = list.getJSONObject(i);
 
-                            WPOVCity c = null;
-                            int id = weather.getInt("id");
-                            // double loop will be fast enought for now
-                            for (WPOVCity city : cities) {
-                                if (city.id == id) {
-                                    c = city;
-                                }
-                            }
+                        // find cities not found by id
+                        List<WPOVCity> missedCities = findMissedCities(cities, list);
 
-                            // ignore for now if we don't find our updated city
-                            if (c == null) {
-                                continue;
-                            }
+                        parseJsonWeather(cities, list);
 
-                            c.lastUpdated = new Date();
-                            JSONArray wDetails = weather.getJSONArray("weather");
-                            if (wDetails.length() > 0) {
-                                c.description = wDetails.getJSONObject(0).getString("description");
-                            }
-                            c.temp = weather.getJSONObject("main").getInt("temp");
-                            c.humidity = weather.getJSONObject("main").getInt("humidity");
 
+                        // fetch another list
+                        if (missedCities.size() > 0) {
                             /**
-                             * just save to db
+                             * city name can only be request one per name ...
                              */
-                            try {
-                                dbHelper.saveCity(c, true);
-                            } catch (Exception e) {
-                                Log.e(TAG, "could not save city to database!", e);
+                            for (WPOVCity city : missedCities) {
+                                List<WPOVCity> missed = new ArrayList<>();
+                                missed.add(city);
+                                // dont wana revrite for non list
+                                fetchWeatherForCityByName(missed, listener);
                             }
+
+                        } else {
+                            if (listener != null) listener.weatherUpdated();
                         }
-                        if (listener != null) listener.weatherUpdated();
                     }
                 } catch (JSONException e) {
                     if (listener != null) listener.errorUpdating();
@@ -495,6 +477,116 @@ public class WeatherFetcherService extends Service {
         task.execute(url);
     }
 
+    /**
+     *
+     * @param cities list of cities to search by string
+     */
+    public void fetchWeatherForCityByName(final List<WPOVCity> cities, final WeatherFetcherListener listener) {
+        RequestHtmlAsString task = new RequestHtmlAsString(new RequestStringListener() {
+            @Override
+            public void requestFinished(JSONObject json) {
+                try {
+                    if (json.has("list")) {
+                        JSONArray list = json.getJSONArray("list");
+
+                        parseJsonWeather(cities, list);
+
+                        if (listener != null) listener.weatherUpdated();
+                    }
+                } catch (JSONException e) {
+                    if (listener != null) listener.errorUpdating();
+                    Log.e(TAG, "Could not parse weather json! Retry...", e);
+                }
+            }
+
+            @Override
+            public void requestFinished(JSONArray json) {
+
+            }
+
+            @Override
+            public void requestFinishedString(String html) {
+
+            }
+
+            @Override
+            public void requestFailed() {
+                if (listener != null) listener.errorUpdating();
+            }
+        });
+        String url = API_BASE_URL + "/data/2.5/weather?q=";
+        for (int i = 0; i < cities.size(); i ++) {
+            url += cities.get(i).name + ((i + 1 == cities.size()) ? "" : ",");
+        }
+        url += "&units=metric&appid=" + API_KEY;
+
+        Log.i(TAG, "Openweather API request url: " + url);
+        task.execute(url);
+    }
+
+    private List<WPOVCity> findMissedCities(List<WPOVCity> cities, JSONArray list) {
+        List<WPOVCity> missedCities = new ArrayList<>();
+        try {
+
+            boolean found = false;
+            for (WPOVCity city : cities) {
+                for (int i = 0; i < list.length(); i++) {
+                    JSONObject weather = list.getJSONObject(i);
+                    int id = weather.getInt("id");
+                    if (city.id == id) {
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    missedCities.add(city);
+                }
+            }
+        } catch (JSONException e) {
+
+            Log.e(TAG, "Could not parse weather json! Retry...", e);
+        }
+        return missedCities;
+    }
+
+    private void parseJsonWeather(List<WPOVCity> cities, JSONArray list) throws JSONException {
+        for (int i = 0; i < list.length(); i++) {
+            JSONObject weather = list.getJSONObject(i);
+
+            WPOVCity c = null;
+            int id = weather.getInt("id");
+
+            // double loop will be fast enought for now
+            for (WPOVCity city : cities) {
+                if (city.id == id) {
+                    c = city;
+                }
+            }
+
+
+
+            // ignore for now if we don't find our updated city
+            if (c == null) {
+                continue;
+            }
+
+            c.lastUpdated = new Date();
+            JSONArray wDetails = weather.getJSONArray("weather");
+            if (wDetails.length() > 0) {
+                c.description = wDetails.getJSONObject(0).getString("description");
+            }
+            c.temp = weather.getJSONObject("main").getInt("temp");
+            c.humidity = weather.getJSONObject("main").getInt("humidity");
+
+            /**
+             * just save to db
+             */
+            try {
+                dbHelper.saveCity(c, true);
+            } catch (Exception e) {
+                Log.e(TAG, "could not save city to database!", e);
+            }
+        }
+    }
 
     public class WeatherFetcherServiceBinder extends Binder {
         public WeatherFetcherService getService() {
@@ -510,7 +602,6 @@ public class WeatherFetcherService extends Service {
     public IBinder onBind(Intent intent) {
         return mBinder;
     }
-
 
     private static HttpURLConnection getHttpConnectionFromUrl(String urlString){
         HttpURLConnection connection;
