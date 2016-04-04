@@ -301,7 +301,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
                 Snackbar.make(fab, "Cities successfully loaded!", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
 
-                // reload favs
+                // plainly reload favs
                 fetchFavouriteCities();
             }
 

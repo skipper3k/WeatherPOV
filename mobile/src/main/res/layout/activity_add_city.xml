@@ -31,13 +31,16 @@
         android:orientation="horizontal"
         >
         <ProgressBar
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_marginRight="10dp"/>
+            android:layout_margin="10dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:paddingLeft="5dp"
+            android:paddingRight="20dp"
+            android:lines="3"
             android:gravity="center_vertical"
             android:text="@string/downloading"/>
 

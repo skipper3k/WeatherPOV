@@ -13,7 +13,7 @@
 
     <string name="error_fetch">Could not load weather data. Please try again later.</string>
 
-    <string name="downloading">Downloading a list of the cities. Please wait for the download to finish.</string>
+    <string name="downloading">Downloading a list of the cities. Please wait for the download to finish. Or set Config.LOAD_CITIES to false.</string>
 
 
     <string name="last_updated"><![CDATA[<small><small>Last update:</small></small> %1$s]]></string>
