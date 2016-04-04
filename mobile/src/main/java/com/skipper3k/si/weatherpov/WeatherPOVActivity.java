@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -56,6 +57,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
     private RecyclerView mCitiesList;
 
     private CitiesRecyclerViewAdapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
 
 
     @Override
@@ -87,11 +89,16 @@ public class WeatherPOVActivity extends AppCompatActivity {
         mCitiesList = (RecyclerView) findViewById(R.id.cities_list);
 
 
+        // use a linear layout manager
+        mLayoutManager = new LinearLayoutManager(this);
+        mCitiesList.setLayoutManager(mLayoutManager);
+
         /**
          * init with an empty list and populate after we get the data...
          */
         mAdapter = new CitiesRecyclerViewAdapter(new ArrayList<WPOVCity>());
         mCitiesList.setAdapter(mAdapter);
+
 
         toggleNoCities(true);
 
@@ -132,12 +139,11 @@ public class WeatherPOVActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     fetch cities list in background
+     */
     private void fetchCities() {
-        /**
-         fetch cities list in background
-         */
         mWeatherFetcherService.fetchCitiesList(new WeatherFetcherService.WeatherFetcherListener() {
-
             @Override
             public void citiesLoaded(Map<String, WPOVCity> cities) {
                 cities.clear();
@@ -176,6 +182,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
                     Snackbar.make(fab, "You added " + citi.name, Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
 
+                    // reload list
                     fetchFavouriteCities();
                 }
             }

@@ -1,9 +1,11 @@
 package com.skipper3k.si.weatherpov.helpers;
 
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.skipper3k.si.weatherpov.R;
@@ -18,7 +20,7 @@ import java.util.List;
  *
  */
 public class CitiesRecyclerViewAdapter extends RecyclerView.Adapter<CitiesRecyclerViewAdapter.ViewHolder> {
-
+    private static final String TAG = CitiesRecyclerViewAdapter.class.getSimpleName();
     /**
      * the list of favoured cities
      */
@@ -32,19 +34,15 @@ public class CitiesRecyclerViewAdapter extends RecyclerView.Adapter<CitiesRecycl
         this.cities = cities;
     }
 
-
     // Create new views (invoked by the layout manager)
     @Override
     public CitiesRecyclerViewAdapter.ViewHolder onCreateViewHolder(ViewGroup parent,
                                                    int viewType) {
-        // create a new view
-        View v = LayoutInflater.from(parent.getContext())
+
+        LinearLayout v = (LinearLayout)LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.city_list_item, parent, false);
 
-        TextView cityName = (TextView)v.findViewById(R.id.cityName);
-        TextView cityTemp = (TextView)v.findViewById(R.id.cityTemp);
-
-        ViewHolder vh = new ViewHolder(cityName, cityTemp);
+        ViewHolder vh = new ViewHolder(v);
         return vh;
     }
 
@@ -52,7 +50,7 @@ public class CitiesRecyclerViewAdapter extends RecyclerView.Adapter<CitiesRecycl
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         holder.mCityName.setText(cities.get(position).name);
-        holder.mCityTemp.setText(cities.get(position).temp);
+//        holder.mCityTemp.setText("" + cities.get(position).temp);
     }
 
     // Return the size of your dataset (invoked by the layout manager)
@@ -62,14 +60,15 @@ public class CitiesRecyclerViewAdapter extends RecyclerView.Adapter<CitiesRecycl
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        // each data item is just a string in this case
-        public TextView mCityName;
-        public TextView mCityTemp;
-        public ViewHolder(TextView v, TextView v2) {
-            super(v);
+        public LinearLayout root;
 
-            mCityName = v;
-            mCityTemp = v2;
+        public TextView mCityName;
+
+        public ViewHolder(LinearLayout v) {
+            super(v);
+            root = v;
+
+            mCityName = (TextView)root.findViewById(R.id.cityName);
         }
     }
 }
