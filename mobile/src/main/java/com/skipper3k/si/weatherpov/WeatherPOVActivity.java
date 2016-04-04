@@ -240,7 +240,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
         if (Config.DEBUG) {
             for (WPOVCity city : citiesList) {
-                Log.i(TAG, "citi : " + city.name + ", description: " + city.description + ", temp: " + city.temp + ", humidity: " + city.humidity
+                Log.i(TAG, "citi : "+ city.id + ", " + city.name + ", description: " + city.description + ", temp: " + city.temp + ", humidity: " + city.humidity
                             + ", last updated: " + city.lastUpdated);
             }
         }

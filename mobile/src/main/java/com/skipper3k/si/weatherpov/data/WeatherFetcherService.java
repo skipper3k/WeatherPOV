@@ -486,13 +486,8 @@ public class WeatherFetcherService extends Service {
             @Override
             public void requestFinished(JSONObject json) {
                 try {
-                    if (json.has("list")) {
-                        JSONArray list = json.getJSONArray("list");
-
-                        parseJsonWeather(cities, list);
-
-                        if (listener != null) listener.weatherUpdated();
-                    }
+                    parseJsonWeather(cities, json);
+                    if (listener != null) listener.weatherUpdated();
                 } catch (JSONException e) {
                     if (listener != null) listener.errorUpdating();
                     Log.e(TAG, "Could not parse weather json! Retry...", e);
@@ -548,43 +543,48 @@ public class WeatherFetcherService extends Service {
         return missedCities;
     }
 
+    private void parseJsonWeather(List<WPOVCity> cities, JSONObject weather) throws JSONException {
+        WPOVCity c = null;
+        int id = weather.getInt("id");
+
+        // double loop will be fast enought for now
+        for (WPOVCity city : cities) {
+            if (city.id == id) {
+                c = city;
+            }
+        }
+
+        // ignore for now if we don't find our updated city
+        if (c == null) {
+            // name calls do not have the same ids, ignore this, we only have the one
+            if (cities.size() == 1) {
+                c = cities.get(0);
+            } else {
+                return;
+            }
+        }
+
+        c.lastUpdated = new Date();
+        JSONArray wDetails = weather.getJSONArray("weather");
+        if (wDetails.length() > 0) {
+            c.description = wDetails.getJSONObject(0).getString("description");
+        }
+        c.temp = weather.getJSONObject("main").getInt("temp");
+        c.humidity = weather.getJSONObject("main").getInt("humidity");
+
+        /**
+         * just save to db
+         */
+        try {
+            dbHelper.saveCity(c, true);
+        } catch (Exception e) {
+            Log.e(TAG, "could not save city to database!", e);
+        }
+    }
     private void parseJsonWeather(List<WPOVCity> cities, JSONArray list) throws JSONException {
         for (int i = 0; i < list.length(); i++) {
             JSONObject weather = list.getJSONObject(i);
-
-            WPOVCity c = null;
-            int id = weather.getInt("id");
-
-            // double loop will be fast enought for now
-            for (WPOVCity city : cities) {
-                if (city.id == id) {
-                    c = city;
-                }
-            }
-
-
-
-            // ignore for now if we don't find our updated city
-            if (c == null) {
-                continue;
-            }
-
-            c.lastUpdated = new Date();
-            JSONArray wDetails = weather.getJSONArray("weather");
-            if (wDetails.length() > 0) {
-                c.description = wDetails.getJSONObject(0).getString("description");
-            }
-            c.temp = weather.getJSONObject("main").getInt("temp");
-            c.humidity = weather.getJSONObject("main").getInt("humidity");
-
-            /**
-             * just save to db
-             */
-            try {
-                dbHelper.saveCity(c, true);
-            } catch (Exception e) {
-                Log.e(TAG, "could not save city to database!", e);
-            }
+            parseJsonWeather(cities, weather);
         }
     }
 

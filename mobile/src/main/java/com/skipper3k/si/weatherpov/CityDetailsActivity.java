@@ -61,7 +61,7 @@ public class CityDetailsActivity extends AppCompatActivity {
         cityTemp.setText(Html.fromHtml(getString(R.string.format_celsius, city.temp)));
         cityHumidity.setText(Html.fromHtml(getString(R.string.format_humidity, city.humidity)));
         cityDescription.setText((city.description + "."));
-        lastUpdated.setText(Html.fromHtml(getString(R.string.last_updated, city.lastUpdated != null ? sdf.format(city.lastUpdated) : "never")));
+        lastUpdated.setText(Html.fromHtml(getString(R.string.last_updated, city.lastUpdated != null ? sdf.format(city.lastUpdated) : "N/A")));
 
         if (!mBound) {
             Intent intentService = new Intent(this, WeatherFetcherService.class);

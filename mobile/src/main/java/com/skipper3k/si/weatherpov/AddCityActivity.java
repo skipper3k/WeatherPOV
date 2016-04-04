@@ -94,9 +94,9 @@ public class AddCityActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (city == null) {
                     city = new WPOVCity();
-                    city.favoured = true;
                     city.name = searchField.getText().toString();
                 }
+                city.favoured = true;
 
                 Intent resultIntent = new Intent();
                 resultIntent.putExtra(WeatherPOVActivity.ADD_CITY_STRING, city);

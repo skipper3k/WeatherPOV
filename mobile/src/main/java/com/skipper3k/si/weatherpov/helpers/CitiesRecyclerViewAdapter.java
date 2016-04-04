@@ -58,7 +58,7 @@ public class CitiesRecyclerViewAdapter extends RecyclerView.Adapter<CitiesRecycl
     @Override
     public void onBindViewHolder(ViewHolder holder, final int position) {
         holder.mCityName.setText(cities.get(position).name);
-        holder.mCityLastUpdate.setText(cities.get(position).lastUpdated != null ? sdf.format(cities.get(position).lastUpdated) : "never");
+        holder.mCityLastUpdate.setText(cities.get(position).lastUpdated != null ? sdf.format(cities.get(position).lastUpdated) : "N/A");
         holder.mCityTemperature.setText((cities.get(position).temp + "°C"));
 
         holder.root.setOnClickListener(new View.OnClickListener() {

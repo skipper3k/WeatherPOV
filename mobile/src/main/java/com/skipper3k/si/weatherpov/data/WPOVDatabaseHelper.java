@@ -67,6 +67,12 @@ public class WPOVDatabaseHelper {
 
         SQLiteStatement stmt = connection.compileStatement(sqlStatement);
 
+
+
+        if (city.id == 0) {
+            city.id = (int)getLatestId() + 1;
+            Log.i(TAG, "new city id: " + city.id);
+        }
         stmt.bindLong(1, city.id);
         stmt.bindString(2, city.name.trim());
         stmt.bindLong(3, city.temp);
@@ -86,6 +92,15 @@ public class WPOVDatabaseHelper {
         }
 
         stmt.close();
+    }
+
+    private long getLatestId() {
+        if (getCitiesCount() == 0) return 1;
+        final String sqlStatement = "select id from " + WPOVDatabase.TABLE_CITY
+                + " order by id DESC limit 1";
+
+        SQLiteStatement stmt = connection.compileStatement(sqlStatement);
+        return stmt.simpleQueryForLong();
     }
 
     // should reuse statement
