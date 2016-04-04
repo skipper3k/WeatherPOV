@@ -168,7 +168,14 @@ public class WeatherFetcherService extends Service {
             return;
         }
 
+        /**
+         * lock flag
+         */
         FETCHING_CITIES = true;
+
+        /**
+         * huge ascync tasks that downloads the list of the citieas and adds them to the database
+         */
         RequestCitiesFile task = new RequestCitiesFile(dbHelper, new WeatherFetcherListener() {
             @Override
             public void citiesLoaded(Map<String, WPOVCity> cities) {
@@ -199,6 +206,7 @@ public class WeatherFetcherService extends Service {
         task.execute(cityListURL);
     }
 
+
     private static Pattern pId = Pattern.compile("^[0-9]*");
     private static Pattern pCity = Pattern.compile("^[[a-z] [A-Z]-]*");
     private static Pattern pCOUNTRY = Pattern.compile(".[A-Z]$");
@@ -224,11 +232,9 @@ public class WeatherFetcherService extends Service {
 
         String country = null;
         Matcher countryMatch = pCOUNTRY.matcher(line);
-        Log.e(TAG, "matcing line: " + line);
         while (countryMatch.find()) {
-            country = cityMatch.group();
+            country = countryMatch.group();
         }
-
 
         if (id != 0 && city != null) {
             WPOVCity c = new WPOVCity();
