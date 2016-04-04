@@ -50,7 +50,7 @@
                     android:layout_height="match_parent"
                     android:textSize="38sp"
                     android:layout_gravity="right"
-                    android:gravity="center"
+                    android:gravity="center|right"
                     android:padding="10dp"
                     android:textColor="@android:color/black"
                     />

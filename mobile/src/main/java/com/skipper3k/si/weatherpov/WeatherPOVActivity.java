@@ -4,10 +4,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -69,6 +71,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
     private CitiesRecyclerViewAdapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
 
+    private SwipeRefreshLayout refreshLayout;
+
     private List<WPOVCity> citiesList;
 
     private Map<Integer, WPOVCity> removeCitiesList;
@@ -99,6 +103,17 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
                 Intent addCityIntent = new Intent(WeatherPOVActivity.this, AddCityActivity.class);
                 startActivityForResult(addCityIntent, ADD_CITY_ACTIVITY);
+            }
+        });
+
+        refreshLayout = (SwipeRefreshLayout)findViewById(R.id.swiperefresh);
+        refreshLayout.setColorSchemeColors(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW);
+
+        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                // force reload from web
+                fetchFavouriteCities(true);
             }
         });
 
@@ -187,6 +202,22 @@ public class WeatherPOVActivity extends AppCompatActivity {
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
         itemTouchHelper.attachToRecyclerView(mCitiesList);
 
+
+
+        mCitiesList.addOnScrollListener(new RecyclerView.OnScrollListener() {
+                @Override
+                public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                    super.onScrolled(recyclerView, dx, dy);
+
+                }
+
+                @Override
+                public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                    super.onScrollStateChanged(recyclerView, newState);
+                }
+            }
+        );
+
         toggleNoCities(true);
 
         if (!mBound) {
@@ -200,6 +231,9 @@ public class WeatherPOVActivity extends AppCompatActivity {
      * get all saved cities from db and add them to the recyclerviewe adapter
      */
     private void fetchFavouriteCities() {
+        fetchFavouriteCities(false);
+    }
+    private void fetchFavouriteCities(boolean online) {
         citiesList = mWeatherFetcherService.favouriteCitiesList();
 
         if (Config.DEBUG) {
@@ -210,40 +244,49 @@ public class WeatherPOVActivity extends AppCompatActivity {
         }
 
         if (citiesList.size() > 0) {
+            // set state to refreshing
+
             toggleNoCities(false);
 
             mAdapter.setData(citiesList);
             mAdapter.notifyDataSetChanged();
 
 
-            mWeatherFetcherService.fetchCitiesWeather(citiesList, new WeatherFetcherService.WeatherFetcherListener() {
-                @Override
-                public void citiesLoaded(Map<String, WPOVCity> cities) {
+            boolean timedUpdate = false;
+            // todo: check last update and update if necessary
+            if (online || timedUpdate) {
+                refreshLayout.setRefreshing(true);
+                mWeatherFetcherService.fetchCitiesWeather(citiesList, new WeatherFetcherService.WeatherFetcherListener() {
+                    @Override
+                    public void citiesLoaded(Map<String, WPOVCity> cities) {
 
-                }
+                    }
 
-                @Override
-                public void fetchedWeather(WPOVCity city) {
+                    @Override
+                    public void fetchedWeather(WPOVCity city) {
 
-                }
+                    }
 
-                @Override
-                public void searchFound(List<WPOVCity> cities) {
+                    @Override
+                    public void searchFound(List<WPOVCity> cities) {
 
-                }
+                    }
 
-                @Override
-                public void weatherUpdated() {
-                    // refetch data from db
-//                    fetchFavouriteCities();
-                }
+                    @Override
+                    public void weatherUpdated() {
+                        refreshLayout.setRefreshing(false);
+                        // refetch data from db
+                        fetchFavouriteCities();
+                    }
 
-                @Override
-                public void errorUpdating() {
-                    Snackbar.make(rootView, getString(R.string.error_fetch), Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                }
-            });
+                    @Override
+                    public void errorUpdating() {
+                        refreshLayout.setRefreshing(false);
+                        Snackbar.make(rootView, getString(R.string.error_fetch), Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+                    }
+                });
+            }
         }
     }
 
@@ -254,10 +297,10 @@ public class WeatherPOVActivity extends AppCompatActivity {
     private void toggleNoCities(boolean nocities) {
         if (nocities) {
             mNoList.setVisibility(View.VISIBLE);
-            mCitiesList.setVisibility(View.GONE);
+            refreshLayout.setVisibility(View.GONE);
         } else {
             mNoList.setVisibility(View.GONE);
-            mCitiesList.setVisibility(View.VISIBLE);
+            refreshLayout.setVisibility(View.VISIBLE);
         }
     }
 
@@ -314,8 +357,9 @@ public class WeatherPOVActivity extends AppCompatActivity {
                     Snackbar.make(fab, "You added " + citi.name, Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
 
+
                     // reload list
-                    fetchFavouriteCities();
+                    fetchFavouriteCities(true);
                 }
             }
         }

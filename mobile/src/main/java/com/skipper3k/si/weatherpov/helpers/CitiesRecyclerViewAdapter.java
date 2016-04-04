@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class CitiesRecyclerViewAdapter extends RecyclerView.Adapter<CitiesRecyclerViewAdapter.ViewHolder> {
     private static final String TAG = CitiesRecyclerViewAdapter.class.getSimpleName();
-    DateFormat sdf = SimpleDateFormat.getDateInstance();
+    DateFormat sdf = SimpleDateFormat.getDateTimeInstance();
     /**
      * the list of favoured cities
      */

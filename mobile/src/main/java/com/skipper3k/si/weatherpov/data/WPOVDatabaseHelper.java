@@ -184,13 +184,13 @@ public class WPOVDatabaseHelper {
         builder.setTables(WPOVDatabase.TABLE_CITY);
 
         String selection = "lower(" + WPOVDatabase.COLUMN_NAME + ") LIKE ?";
-        String[] selectionArgs = new String[] { "%" + city.toLowerCase() + "%"};;
+        String[] selectionArgs = new String[] { city.toLowerCase() + "%"};
 
         /**
          * limit to 30 for now
          */
         Cursor cursor = builder.query(connection,
-                allColumns, selection, selectionArgs, null, null, null, "30");
+                allColumns, selection, selectionArgs, null, null, "name asc", "30");
 
         if (cursor == null) {
             Log.e(TAG, "nothing found");
