@@ -1,6 +1,5 @@
 package com.skipper3k.si.weatherpov.data;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
@@ -16,7 +15,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,8 +25,30 @@ import java.util.Map;
 public class WPOVDatabaseHelper {
     private static final String TAG = WPOVDatabaseHelper.class.getSimpleName();
 
+
+    public WPOVDatabaseHelper(Context context) {
+        WPOVDatabase database = new WPOVDatabase(context);
+        connection = database.getWritableDatabase();
+        connection.enableWriteAheadLogging();
+    }
+
+    private SQLiteDatabase connection;
+
+    private String[] allColumns = {
+            "id as _id",
+            WPOVDatabase.COLUMN_OWM_ID,
+            WPOVDatabase.COLUMN_NAME,
+            WPOVDatabase.COLUMN_TEMP,
+            WPOVDatabase.COLUMN_HUMIDITY,
+            WPOVDatabase.COLUMN_DESCRIPTION,
+            WPOVDatabase.COLUMN_LAST_UPDATED,
+            WPOVDatabase.COLUMN_FAVORED
+    };
+
+
     /**
      * updates an existig city or adds a cutom one to the database
+     * We use this update call for every city update (favored, unfavoured, climate data change ...)
      *
      * @param city city object
      * @param updateWeather if the weather data changes set to true
@@ -62,8 +82,13 @@ public class WPOVDatabaseHelper {
         stmt.execute();
     }
 
+    /**
+     * Construct a list of favoured cities to display in recycle viewe
+     *
+     * @return Custom array list with favoured cities and weather data
+     */
     public List<WPOVCity> favouredCitiesList() {
-        List<WPOVCity> cities = new ArrayList<WPOVCity>();
+        List<WPOVCity> cities = new ArrayList<>();
 
         String selection = WPOVDatabase.COLUMN_FAVORED + " > 0";
 
@@ -77,29 +102,9 @@ public class WPOVDatabaseHelper {
             cursor.moveToNext();
         }
         cursor.close();
-
         return cities;
     }
 
-    private String[] allColumns = {
-            "id as _id",
-            WPOVDatabase.COLUMN_OWM_ID,
-            WPOVDatabase.COLUMN_NAME,
-            WPOVDatabase.COLUMN_TEMP,
-            WPOVDatabase.COLUMN_HUMIDITY,
-            WPOVDatabase.COLUMN_DESCRIPTION,
-            WPOVDatabase.COLUMN_LAST_UPDATED,
-            WPOVDatabase.COLUMN_FAVORED
-            };
-
-    private SQLiteDatabase connection;
-
-    public WPOVDatabaseHelper(Context context) {
-        WPOVDatabase database = new WPOVDatabase(context);
-        connection = database.getWritableDatabase();
-
-        connection.enableWriteAheadLogging();
-    }
 
     public void closeConnections() {
         Log.e(TAG, "closing DB connection!");
@@ -175,10 +180,10 @@ public class WPOVDatabaseHelper {
         String[] selectionArgs = new String[] { "%" + city.toLowerCase() + "%"};;
 
         /**
-         * limit to 20 for now
+         * limit to 30 for now
          */
         Cursor cursor = builder.query(connection,
-                allColumns, selection, selectionArgs, null, null, null, "20");
+                allColumns, selection, selectionArgs, null, null, null, "30");
 
         if (cursor == null) {
             Log.e(TAG, "nothing found");
@@ -190,23 +195,6 @@ public class WPOVDatabaseHelper {
         }
 
         return cursor;
-    }
-
-    public Map<String, WPOVCity> getCitiesFromDB(Context context) {
-        Map<String, WPOVCity> cities = new HashMap<String, WPOVCity>();
-
-        Cursor cursor = connection.query(WPOVDatabase.TABLE_CITY,
-                allColumns, null, null, null, null, null, null);
-
-        cursor.moveToFirst();
-        while (!cursor.isAfterLast()) {
-            WPOVCity city = cursorToCity(cursor);
-            cities.put(city.name, city);
-            cursor.moveToNext();
-        }
-        cursor.close();
-
-        return cities;
     }
 
     public static WPOVCity cursorToCity(Cursor cursor) {
@@ -231,23 +219,5 @@ public class WPOVDatabaseHelper {
         city.favoured = cursor.getInt(7) != 0;
 
         return city;
-    }
-
-    private static ContentValues cityToValues(WPOVCity city) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        ContentValues values = new ContentValues();
-        values.put(WPOVDatabase.COLUMN_OWM_ID, city.id);
-        values.put(WPOVDatabase.COLUMN_NAME, city.name);
-        if (city.lastUpdated != null) {
-            values.put(WPOVDatabase.COLUMN_LAST_UPDATED, sdf.format(city.lastUpdated));
-        } else {
-            values.put(WPOVDatabase.COLUMN_LAST_UPDATED, "");
-        }
-        values.put(WPOVDatabase.COLUMN_TEMP, city.temp);
-        values.put(WPOVDatabase.COLUMN_HUMIDITY, city.humidity);
-        values.put(WPOVDatabase.COLUMN_DESCRIPTION, city.description);
-
-        return values;
     }
 }
