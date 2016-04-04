@@ -142,23 +142,11 @@ public class WeatherFetcherService extends Service {
      * @param updateWeather update weather data
      */
     public void saveCity(final WPOVCity city, final boolean updateWeather) {
-
-        new AsyncTask<Void, Void, Void>() {
-            protected void onPreExecute() {
-                // Pre Code
-            }
-            protected Void doInBackground(Void... unused) {
-                try {
-                    dbHelper.saveCity(city, updateWeather);
-                } catch (Exception e) {
-                    Log.e(TAG, "Could not save city to database", e);
-                }
-                return null;
-            }
-            protected void onPostExecute(Void unused) {
-                // Post Code
-            }
-        }.execute();
+        try {
+            dbHelper.saveCity(city, updateWeather);
+        } catch (Exception e) {
+            Log.e(TAG, "Could not save city to database", e);
+        }
     }
 
     public List<WPOVCity> favouriteCitiesList() {
