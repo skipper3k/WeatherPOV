@@ -65,29 +65,28 @@ public class WPOVDatabaseHelper {
         if (Config.DEBUG) Log.i(TAG, "Saving to database.");
         long startTime = System.nanoTime();
 
-        connection.beginTransaction();
-
         boolean success = true;
 
         final String sql = " INSERT INTO " + WPOVDatabase.TABLE_CITY + "("
-                + " owmid,"             // 1
-                + " name"              // 2
+                + WPOVDatabase.COLUMN_OWM_ID + ", "             // 1
+                + WPOVDatabase.COLUMN_NAME              // 2
                 + " ) VALUES (?1,?2)";
         SQLiteStatement stmt = connection.compileStatement(sql);
+
         connection.beginTransaction();
 
         try {
             for (WPOVCity city : cities.values()) {
-                ContentValues values = cityToValues(city);
-
-                connection.insert(WPOVDatabase.TABLE_CITY, null,
-                        values);
+                stmt.bindString(1, city.id);
+                stmt.bindString(2, city.name);
+                stmt.execute();
             }
 
             connection.setTransactionSuccessful();
         } catch (SQLiteException e) {
             success = false;
         }  finally {
+            Log.e(TAG, "endTransaction");
             connection.endTransaction();
         }
 

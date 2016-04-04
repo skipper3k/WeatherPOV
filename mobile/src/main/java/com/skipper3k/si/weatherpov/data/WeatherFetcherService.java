@@ -104,7 +104,7 @@ public class WeatherFetcherService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (dbHelper == null) {
-            dbHelper = new WPOVDatabaseHelper(getApplication());
+            dbHelper = new WPOVDatabaseHelper(this);
         }
         return super.onStartCommand(intent, flags, startId);
     }
@@ -133,6 +133,8 @@ public class WeatherFetcherService extends Service {
      * we get the list of cities every now and then and save it locally for further use
      */
     public void fetchCitiesList(final WeatherFetcherListener listener) {
+
+
         /**
          * Load cities from db or the web ...
          */
@@ -161,7 +163,7 @@ public class WeatherFetcherService extends Service {
 
             @Override
             public void requestFinishedString(String html) {
-                SaveCitiesAsync citiesTask = new SaveCitiesAsync(getApplication(), new WeatherFetcherListener() {
+                SaveCitiesAsync citiesTask = new SaveCitiesAsync(WeatherFetcherService.this, new WeatherFetcherListener() {
                     @Override
                     public void citiesLoaded(Map<String, WPOVCity> cities) {
 //                        WeatherFetcherService.saveCitiesList(getApplicationContext(), cities, dbHelper);
@@ -250,7 +252,7 @@ public class WeatherFetcherService extends Service {
      *
      * @param citiesList list of cities with ids
      */
-    private static boolean saveCitiesList(Context context, Map<String, WPOVCity> citiesList, WPOVDatabaseHelper dbHelper) {
+    public static boolean saveCitiesList(Context context, Map<String, WPOVCity> citiesList, WPOVDatabaseHelper dbHelper) {
         Log.i(TAG, "Saving cities to database!");
         return dbHelper.saveCities(context, citiesList);
     }
