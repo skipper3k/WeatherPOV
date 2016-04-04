@@ -154,8 +154,10 @@ public class AddCityActivity extends AppCompatActivity {
 
             if (mWeatherFetcherService.isFETCHING_CITIES()) {
                 spinner.setVisibility(View.VISIBLE);
+
                 searchField.setFocusable(false);
                 textInputLayout.setFocusable(false);
+                textInputLayout.setClickable(false);
             }
 
             mWeatherFetcherService.setmListener(new WeatherFetcherService.WeatherFetcherListener() {
@@ -167,6 +169,7 @@ public class AddCityActivity extends AppCompatActivity {
 
                     searchField.setFocusable(true);
                     textInputLayout.setFocusable(true);
+                    textInputLayout.setClickable(true);
                 }
 
                 @Override

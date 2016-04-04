@@ -349,7 +349,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
             mWeatherFetcherService = binder.getService();
             mBound = true;
 
-            fetchCities();
+            if (Config.LOAD_CITIES) fetchCities();
             fetchFavouriteCities();
         }
 

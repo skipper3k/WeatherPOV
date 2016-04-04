@@ -6,4 +6,10 @@ package com.skipper3k.si.weatherpov.helpers;
  */
 public class Config {
     public static final boolean DEBUG = true;
+
+    /**
+     * This is for the first run only.
+     * This downloads a list of the cities but disables adding favourites for a while.
+     */
+    public static final boolean LOAD_CITIES = true;
 }
