@@ -25,6 +25,7 @@ import com.skipper3k.si.weatherpov.helpers.CitiesRecyclerViewAdapter;
 import com.skipper3k.si.weatherpov.helpers.Config;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,6 +55,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
     private FloatingActionButton fab;
 
+    private View rootView;
+
     private View mNoList;
     private RecyclerView mCitiesList;
 
@@ -62,6 +65,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
     private List<WPOVCity> citiesList;
 
+    private Map<Integer, WPOVCity> removeCitiesList;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +74,9 @@ public class WeatherPOVActivity extends AppCompatActivity {
         setContentView(R.layout.activity_weather_pov);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+
+        rootView = findViewById(R.id.root_view);
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
 
@@ -102,6 +110,9 @@ public class WeatherPOVActivity extends AppCompatActivity {
         mAdapter = new CitiesRecyclerViewAdapter(new ArrayList<WPOVCity>());
         mCitiesList.setAdapter(mAdapter);
 
+
+        removeCitiesList = new HashMap<>();
+
         ItemTouchHelper.SimpleCallback simpleItemTouchCallback =
                 new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
@@ -115,23 +126,45 @@ public class WeatherPOVActivity extends AppCompatActivity {
                 // todo: snackbar action
                 final int position = viewHolder.getAdapterPosition();
                 WPOVCity city = citiesList.get(position);
+                city.favoured = false;
+                citiesList.remove(position);
+
                 mAdapter.notifyItemRemoved(position);
 
-                city.favoured = false;
+                if (citiesList.size() < 1) {
+                    toggleNoCities(true);
+                }
 
-                mWeatherFetcherService.saveCity(city);
-                citiesList.remove(city);
+                /** save city for remove */
+                final WPOVCity removeCity = city;
+                removeCitiesList.put(position, city);
 
 
-                Snackbar.make(fab, getString(R.string.remove_from_favs, city.name), Snackbar.LENGTH_LONG)
-                        .setAction("Action", null)
+
+                Snackbar.make(rootView, getString(R.string.remove_from_favs, city.name), Snackbar.LENGTH_LONG)
+                        .setAction(getString(R.string.undo), new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (position > citiesList.size()) {
+                                    citiesList.add(removeCitiesList.get(position));
+                                    mAdapter.notifyItemInserted(citiesList.size());
+                                } else {
+                                    citiesList.add(position, removeCitiesList.get(position));
+                                    mAdapter.notifyItemInserted(position);
+                                }
+                                removeCitiesList.remove(position);
+                            }
+                        })
                     /**
                      * city is actually dismissed when snackbar hides
                      */
                         .setCallback(new Snackbar.Callback() {
                             @Override
                             public void onDismissed(Snackbar snackbar, int event) {
-//                                Log.e(TAG, "Actually removing city: " + city);
+                                if (removeCitiesList.containsKey(position)) {
+                                    mWeatherFetcherService.saveCity(removeCitiesList.get(position));
+                                    removeCitiesList.remove(position);
+                                }
 
                                 super.onDismissed(snackbar, event);
                             }

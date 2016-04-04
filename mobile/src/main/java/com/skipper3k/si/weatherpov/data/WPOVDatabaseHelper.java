@@ -54,14 +54,6 @@ public class WPOVDatabaseHelper {
      * @param updateWeather if the weather data changes set to true
      */
     public void saveCity(WPOVCity city, boolean updateWeather) {
-        Log.i(TAG, "modifying city: " + city.id);
-        Log.i(TAG, "modifying city: " + city.name);
-        Log.i(TAG, "modifying city: " + city.temp);
-        Log.i(TAG, "modifying city: " + city.humidity);
-        Log.i(TAG, "modifying city: " + city.description);
-        Log.i(TAG, "modifying city: " + city.lastUpdated);
-        Log.i(TAG, "modifying city: " + city.favoured);
-
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         final String sqlStatement = "INSERT OR REPLACE INTO " + WPOVDatabase.TABLE_CITY + "("
@@ -169,7 +161,6 @@ public class WPOVDatabaseHelper {
         long duration = (endTime - startTime);
 
         if (Config.DEBUG) Log.i(TAG, "Saving cities to database took: " + duration/1000000 + " milis.");
-        if (Config.DEBUG) Log.i(TAG, "Search for london: " + searchForCity("lond"));
 
         return success;
     }
