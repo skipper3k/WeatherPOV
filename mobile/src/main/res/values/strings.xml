@@ -5,4 +5,6 @@
     <string name="City">City</string>
     <string name="addCity">Add City</string>
     <string name="CitySearch">Search for a city</string>
+
+    <string name="no_favourite_cities">No city added yet. Tap the add button to add cities.</string>
 </resources>

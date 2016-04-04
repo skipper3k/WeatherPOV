@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
@@ -18,8 +19,10 @@ import android.view.MenuItem;
 import com.skipper3k.si.weatherpov.data.WPOVCity;
 import com.skipper3k.si.weatherpov.data.WPOVDatabase;
 import com.skipper3k.si.weatherpov.data.WeatherFetcherService;
+import com.skipper3k.si.weatherpov.helpers.CitiesRecyclerViewAdapter;
 import com.skipper3k.si.weatherpov.helpers.Config;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +52,12 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
     private FloatingActionButton fab;
 
+    private View mNoList;
+    private RecyclerView mCitiesList;
+
+    private CitiesRecyclerViewAdapter mAdapter;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +83,17 @@ public class WeatherPOVActivity extends AppCompatActivity {
             }
         });
 
+        mNoList = findViewById(R.id.no_cities);
+        mCitiesList = (RecyclerView) findViewById(R.id.cities_list);
+
+
+        /**
+         * init with an empty list and populate after we get the data...
+         */
+        mAdapter = new CitiesRecyclerViewAdapter(new ArrayList<WPOVCity>());
+        mCitiesList.setAdapter(mAdapter);
+
+        toggleNoCities(true);
 
         if (!mBound) {
             Intent intent = new Intent(this, WeatherFetcherService.class);
@@ -89,6 +109,26 @@ public class WeatherPOVActivity extends AppCompatActivity {
         List<WPOVCity> cities = mWeatherFetcherService.favouriteCitiesList();
         for (WPOVCity city : cities) {
             Log.i(TAG, "favourite city: " + city.name);
+        }
+
+        if (cities.size() > 0) {
+            toggleNoCities(false);
+            mAdapter.setData(cities);
+            mAdapter.notifyDataSetChanged();
+        }
+    }
+
+    /**
+     *
+     * @param nocities true if we have no favourites, false if we do not
+     */
+    private void toggleNoCities(boolean nocities) {
+        if (nocities) {
+            mNoList.setVisibility(View.VISIBLE);
+            mCitiesList.setVisibility(View.GONE);
+        } else {
+            mNoList.setVisibility(View.GONE);
+            mCitiesList.setVisibility(View.VISIBLE);
         }
     }
 
