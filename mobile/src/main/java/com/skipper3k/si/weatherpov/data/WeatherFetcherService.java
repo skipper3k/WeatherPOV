@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +87,8 @@ public class WeatherFetcherService extends Service {
         void citiesLoaded(Map<String, WPOVCity> cities);
         void fetchedWeather(WPOVCity city);
         void searchFound(List<WPOVCity> cities);
+        void weatherUpdated();
+        void errorUpdating();
     }
 
     public void setmListener(WeatherFetcherListener mListener) {
@@ -146,8 +149,6 @@ public class WeatherFetcherService extends Service {
      * fixme: do not create a map - save directly after response returns a list of the cities!
      */
     public void fetchCitiesList(final WeatherFetcherListener listener) {
-
-
         /**
          * Load cities from db or the web ...
          */
@@ -189,6 +190,16 @@ public class WeatherFetcherService extends Service {
 
                     @Override
                     public void searchFound(List<WPOVCity> cities) {
+
+                    }
+
+                    @Override
+                    public void weatherUpdated() {
+
+                    }
+
+                    @Override
+                    public void errorUpdating() {
 
                     }
                 }, dbHelper);
@@ -371,6 +382,89 @@ public class WeatherFetcherService extends Service {
                 }
             }
         }
+    }
+
+
+    /**
+     * the API call to OpenWeatherMapAPI to get current weather for cities
+     *
+     * @param cities list of cities to fetch data
+     */
+    public void fetchCitiesWeather(final List<WPOVCity> cities, final WeatherFetcherListener listener) {
+        RequestHtmlAsString task = new RequestHtmlAsString(new RequestStringListener() {
+            @Override
+            public void requestFinished(JSONObject json) {
+                try {
+                    if (json.has("list")) {
+                        JSONArray list = json.getJSONArray("list");
+                        for (int i = 0; i < list.length(); i++) {
+                            JSONObject weather = list.getJSONObject(i);
+
+                            WPOVCity c = null;
+                            int id = weather.getInt("id");
+                            // double loop will be fast enought for now
+                            for (WPOVCity city : cities) {
+                                if (city.id == id) {
+                                    c = city;
+                                }
+                            }
+
+                            // ignore for now if we don't find our updated city
+                            if (c == null) {
+                                continue;
+                            }
+
+                            c.lastUpdated = new Date();
+                            JSONArray wDetails = weather.getJSONArray("weather");
+                            if (wDetails.length() > 0) {
+                                c.description = wDetails.getJSONObject(0).getString("description");
+                            }
+                            c.temp = weather.getJSONObject("main").getInt("temp");
+                            c.humidity = weather.getJSONObject("main").getInt("humidity");
+
+                            /**
+                             * just save to db
+                             */
+                            dbHelper.saveCity(c, true);
+                        }
+
+                        if (listener != null) listener.weatherUpdated();
+                    }
+                } catch (JSONException e) {
+                    if (listener != null) listener.errorUpdating();
+                    Log.e(TAG, "Could not parse weather json! Retry...", e);
+                }
+            }
+
+            @Override
+            public void requestFinished(JSONArray json) {
+                Log.i(TAG, "got json array: " + json);
+            }
+
+            @Override
+            public void requestFinishedString(String html) {
+                // nothing interesting here
+            }
+
+            @Override
+            public void requestFailed() {
+                Log.e(TAG, "Could not fetch a list of cities. Retry in 1 minute.");
+                if (listener != null) listener.errorUpdating();
+            }
+        });
+
+        /**
+         * example:
+         *  http://api.openweathermap.org/data/2.5/group?id=524901,703448,2643743&units=metric&appid=b1b15e88fa797225412429c1c50c122a
+         */
+        String url = API_BASE_URL + "/data/2.5/group?id=";
+        for (int i = 0; i < cities.size(); i ++) {
+            url += cities.get(i).id + ((i + 1 == cities.size()) ? "" : ",");
+        }
+        url += "&units=metric&appid=" + API_KEY;
+
+        Log.i(TAG, "Openweather API request url: " + url);
+        task.execute(url);
     }
 
 

@@ -10,4 +10,6 @@
 
     <string name="remove_from_favs">Removed %s from favourites.</string>
     <string name="undo">Undo</string>
+
+    <string name="error_fetch">Could not load weather data. Please try again later.</string>
 </resources>

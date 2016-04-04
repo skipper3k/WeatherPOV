@@ -196,11 +196,47 @@ public class WeatherPOVActivity extends AppCompatActivity {
     private void fetchFavouriteCities() {
         citiesList = mWeatherFetcherService.favouriteCitiesList();
 
+        if (Config.DEBUG) {
+            for (WPOVCity city : citiesList) {
+                Log.i(TAG, "citi : " + city.name + ", description: " + city.description + ", temp: " + city.temp + ", humidity: " + city.humidity
+                            + ", last updated: " + city.lastUpdated);
+            }
+        }
+
         if (citiesList.size() > 0) {
             toggleNoCities(false);
 
             mAdapter.setData(citiesList);
             mAdapter.notifyDataSetChanged();
+
+            mWeatherFetcherService.fetchCitiesWeather(citiesList, new WeatherFetcherService.WeatherFetcherListener() {
+                @Override
+                public void citiesLoaded(Map<String, WPOVCity> cities) {
+
+                }
+
+                @Override
+                public void fetchedWeather(WPOVCity city) {
+
+                }
+
+                @Override
+                public void searchFound(List<WPOVCity> cities) {
+
+                }
+
+                @Override
+                public void weatherUpdated() {
+                    // refetch data from db
+                    fetchFavouriteCities();
+                }
+
+                @Override
+                public void errorUpdating() {
+                    Snackbar.make(rootView, getString(R.string.error_fetch), Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                }
+            });
         }
     }
 
@@ -240,6 +276,16 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
             @Override
             public void searchFound(List<WPOVCity> cities) {
+
+            }
+
+            @Override
+            public void weatherUpdated() {
+
+            }
+
+            @Override
+            public void errorUpdating() {
 
             }
         });

@@ -44,6 +44,8 @@ public class AddCityActivity extends AppCompatActivity {
 
         final AutoCompleteTextView searchField = (AutoCompleteTextView) findViewById(R.id.searchCity);
 
+
+        // todo: switch to LoaderManager
         adapter = new SimpleCursorAdapter(this,
                 android.R.layout.simple_list_item_1,
                 null,

@@ -44,7 +44,6 @@ public class WPOVDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase database) {
-        Log.e(TAG, "Create table!");
         database.execSQL(CREATE_TABLE_CITY);
     }
 
