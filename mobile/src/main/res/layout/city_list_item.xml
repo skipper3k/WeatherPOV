@@ -12,7 +12,7 @@
         android:layout_gravity="center"
         android:layout_width="match_parent"
         android:layout_margin="3dp"
-        android:layout_height="100dp"
+        android:layout_height="120dp"
         card_view:cardCornerRadius="2dp"
         card_view:cardElevation="2dp"
         >
@@ -48,7 +48,7 @@
                     android:layout_weight="1"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:textSize="38sp"
+                    android:textSize="36sp"
                     android:layout_gravity="right"
                     android:gravity="center|right"
                     android:padding="10dp"
