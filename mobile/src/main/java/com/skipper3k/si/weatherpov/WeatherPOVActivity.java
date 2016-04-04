@@ -304,10 +304,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
         mWeatherFetcherService.fetchCitiesList(new WeatherFetcherService.WeatherFetcherListener() {
             @Override
             public void citiesLoaded(Map<String, WPOVCity> cities) {
-                if (Config.DEBUG) {
-                    Snackbar.make(fab, "Cities successfully loaded!", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                }
+                Snackbar.make(fab, "Cities successfully loaded!", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
             }
 
             @Override

@@ -8,6 +8,7 @@ import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -153,6 +154,8 @@ public class AddCityActivity extends AppCompatActivity {
                 @Override
                 public void citiesLoaded(Map<String, WPOVCity> cities) {
                     spinner.setVisibility(View.GONE);
+                    Snackbar.make(spinner, "Cities successfully loaded!", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
                 }
 
                 @Override

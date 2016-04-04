@@ -181,6 +181,7 @@ public class WeatherFetcherService extends Service {
             public void citiesLoaded(Map<String, WPOVCity> cities) {
                 FETCHING_CITIES = false;
                 if (listener != null) listener.citiesLoaded(cities);
+                if (mListener != null) mListener.citiesLoaded(null);
             }
 
             @Override
