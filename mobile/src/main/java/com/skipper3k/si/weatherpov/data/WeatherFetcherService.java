@@ -26,7 +26,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -93,9 +92,7 @@ public class WeatherFetcherService extends Service {
      */
     public interface WeatherFetcherListener {
         void citiesLoaded(Map<String, WPOVCity> cities);
-        void fetchedWeather(WPOVCity city);
-        void searchFound(List<WPOVCity> cities);
-        void weatherUpdated();
+        void weatherUpdated(List<WPOVCity> cities);
         void errorUpdating();
     }
 
@@ -137,13 +134,31 @@ public class WeatherFetcherService extends Service {
     public void saveCity(WPOVCity city) {
         saveCity(city, false);
     }
-    public void saveCity(WPOVCity city, boolean updateWeather) {
-        try {
-            dbHelper.saveCity(city, updateWeather);
-        } catch (Exception e) {
-            Log.e(TAG, "could not save city to database!", e);
-        }
 
+    /**
+     * put it on an async task so the ui is responsive if there is a large transaction going on
+     *
+     * @param city city to save
+     * @param updateWeather update weather data
+     */
+    public void saveCity(final WPOVCity city, final boolean updateWeather) {
+
+        new AsyncTask<Void, Void, Void>() {
+            protected void onPreExecute() {
+                // Pre Code
+            }
+            protected Void doInBackground(Void... unused) {
+                try {
+                    dbHelper.saveCity(city, updateWeather);
+                } catch (Exception e) {
+                    Log.e(TAG, "Could not save city to database", e);
+                }
+                return null;
+            }
+            protected void onPostExecute(Void unused) {
+                // Post Code
+            }
+        }.execute();
     }
 
     public List<WPOVCity> favouriteCitiesList() {
@@ -185,17 +200,7 @@ public class WeatherFetcherService extends Service {
             }
 
             @Override
-            public void fetchedWeather(WPOVCity city) {
-
-            }
-
-            @Override
-            public void searchFound(List<WPOVCity> cities) {
-
-            }
-
-            @Override
-            public void weatherUpdated() {
+            public void weatherUpdated(List<WPOVCity> cities) {
 
             }
 
@@ -446,7 +451,7 @@ public class WeatherFetcherService extends Service {
                             }
 
                         } else {
-                            if (listener != null) listener.weatherUpdated();
+                            if (listener != null) listener.weatherUpdated(cities);
                         }
                     }
                 } catch (JSONException e) {
@@ -496,7 +501,7 @@ public class WeatherFetcherService extends Service {
             public void requestFinished(JSONObject json) {
                 try {
                     parseJsonWeather(cities, json);
-                    if (listener != null) listener.weatherUpdated();
+                    if (listener != null) listener.weatherUpdated(cities);
                 } catch (JSONException e) {
                     if (listener != null) listener.errorUpdating();
                     Log.e(TAG, "Could not parse weather json! Retry...", e);
@@ -589,7 +594,7 @@ public class WeatherFetcherService extends Service {
          * just save to db
          */
         try {
-            dbHelper.saveCity(c, true);
+            saveCity(c, true);
         } catch (Exception e) {
             Log.e(TAG, "could not save city to database!", e);
         }

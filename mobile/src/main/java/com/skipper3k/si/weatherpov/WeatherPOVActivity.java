@@ -164,6 +164,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
                                     citiesList.add(position, removeCitiesList.get(position));
                                     mAdapter.notifyItemInserted(position);
                                 }
+                                // undo for the last element was not working
+                                toggleNoCities(false);
                                 removeCitiesList.remove(position);
                             }
                         })
@@ -231,22 +233,26 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
         if (Config.DEBUG) {
             for (WPOVCity city : citiesList) {
-                Log.i(TAG, "citi : "+ city.id + ", " + city.name + ", description: " + city.description + ", temp: " + city.temp + ", humidity: " + city.humidity
-                            + ", last updated: " + city.lastUpdated);
+                Log.i(TAG, "citi : " + city.id + ", " + city.name + ", description: " + city.description + ", temp: " + city.temp + ", humidity: " + city.humidity
+                        + ", last updated: " + city.lastUpdated);
             }
         }
 
         if (citiesList.size() > 0) {
-            // set state to refreshing
-
-            toggleNoCities(false);
-
             mAdapter.setData(citiesList);
             mAdapter.notifyDataSetChanged();
+        }
 
+        updateFavouriteCitiesWeather(online);
+    }
+    private void updateFavouriteCitiesWeather(boolean online) {
+        if (citiesList.size() > 0) {
+            // set state to refreshing
+            toggleNoCities(false);
 
             boolean timedUpdate = false;
-            // todo: check last update and update if necessary
+            // todo: check last update and update only if necessary
+
             if (online || timedUpdate) {
                 refreshLayout.setRefreshing(true);
                 mWeatherFetcherService.fetchCitiesWeather(citiesList, new WeatherFetcherService.WeatherFetcherListener() {
@@ -256,17 +262,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void fetchedWeather(WPOVCity city) {
-
-                    }
-
-                    @Override
-                    public void searchFound(List<WPOVCity> cities) {
-
-                    }
-
-                    @Override
-                    public void weatherUpdated() {
+                    public void weatherUpdated(List<WPOVCity> cities) {
                         refreshLayout.setRefreshing(false);
                         // refetch data from db
                         fetchFavouriteCities();
@@ -306,20 +302,13 @@ public class WeatherPOVActivity extends AppCompatActivity {
             public void citiesLoaded(Map<String, WPOVCity> cities) {
                 Snackbar.make(fab, "Cities successfully loaded!", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
+
+                // reload favs
+                fetchFavouriteCities();
             }
 
             @Override
-            public void fetchedWeather(WPOVCity city) {
-
-            }
-
-            @Override
-            public void searchFound(List<WPOVCity> cities) {
-
-            }
-
-            @Override
-            public void weatherUpdated() {
+            public void weatherUpdated(List<WPOVCity> cities) {
 
             }
 
@@ -337,17 +326,15 @@ public class WeatherPOVActivity extends AppCompatActivity {
                 // refresh list !
                 if (data != null) {
 
-                    WPOVCity citi = (WPOVCity)data.getExtras().getSerializable(ADD_CITY_STRING);
+                    WPOVCity citi = (WPOVCity) data.getExtras().getSerializable(ADD_CITY_STRING);
                     Log.i(TAG, "citi: " + citi.name + " fav: " + citi.favoured);
 
                     /**
                      * todo: undo action
                      */
-                    Snackbar.make(fab, "You added " + citi.name, Snackbar.LENGTH_LONG)
+                    Snackbar.make(fab, getString(R.string.favourite_added, citi.name), Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
 
-
-                    // reload list
                     fetchFavouriteCities(true);
                 }
             }

@@ -9,6 +9,7 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -43,13 +44,17 @@ public class AddCityActivity extends AppCompatActivity {
 
     private View spinner;
 
+    private AutoCompleteTextView searchField;
+    private TextInputLayout textInputLayout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_city);
 
-        final AutoCompleteTextView searchField = (AutoCompleteTextView) findViewById(R.id.searchCity);
 
+        searchField = (AutoCompleteTextView) findViewById(R.id.searchCity);
+        textInputLayout = (TextInputLayout) findViewById(R.id.textInputLayout);
 
         // todo: switch to LoaderManager
         adapter = new SimpleCursorAdapter(this,
@@ -59,6 +64,7 @@ public class AddCityActivity extends AppCompatActivity {
                 new int[] { android.R.id.text1 });
 
         searchField.setAdapter(adapter);
+
 
         /**
          * the proper way to repopulate dropdown list
@@ -148,6 +154,8 @@ public class AddCityActivity extends AppCompatActivity {
 
             if (mWeatherFetcherService.isFETCHING_CITIES()) {
                 spinner.setVisibility(View.VISIBLE);
+                searchField.setFocusable(false);
+                textInputLayout.setFocusable(false);
             }
 
             mWeatherFetcherService.setmListener(new WeatherFetcherService.WeatherFetcherListener() {
@@ -156,20 +164,13 @@ public class AddCityActivity extends AppCompatActivity {
                     spinner.setVisibility(View.GONE);
                     Snackbar.make(spinner, "Cities successfully loaded!", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
+
+                    searchField.setFocusable(true);
+                    textInputLayout.setFocusable(true);
                 }
 
                 @Override
-                public void fetchedWeather(WPOVCity city) {
-
-                }
-
-                @Override
-                public void searchFound(List<WPOVCity> cities) {
-
-                }
-
-                @Override
-                public void weatherUpdated() {
+                public void weatherUpdated(List<WPOVCity> cities) {
 
                 }
 
