@@ -134,8 +134,6 @@ public class WeatherPOVActivity extends AppCompatActivity {
 
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
-                Log.e(TAG, "remove item at : " + swipeDir);
-                // todo: snackbar action
                 final int position = viewHolder.getAdapterPosition();
                 WPOVCity city = citiesList.get(position);
                 city.favoured = false;
@@ -329,9 +327,6 @@ public class WeatherPOVActivity extends AppCompatActivity {
                     WPOVCity citi = (WPOVCity) data.getExtras().getSerializable(ADD_CITY_STRING);
                     Log.i(TAG, "citi: " + citi.name + " fav: " + citi.favoured);
 
-                    /**
-                     * todo: undo action
-                     */
                     Snackbar.make(fab, getString(R.string.favourite_added, citi.name), Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
 

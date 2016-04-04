@@ -168,7 +168,6 @@ public class WeatherFetcherService extends Service {
     /**
      * we get the list of cities every now and then and save it locally for further use
      *
-     * fixme: do not create a map - save directly after response returns a list of the cities!
      */
     public void fetchCitiesList(final WeatherFetcherListener listener) {
         /**
@@ -335,7 +334,6 @@ public class WeatherFetcherService extends Service {
 
                     if (Config.DEBUG) Log.i(TAG, "Downloading and parsing cities took: " + duration / 1000000 + " milis.");
 
-                    //TODO: handle response from server
                     return response;
                 }
                 return null;
@@ -387,7 +385,6 @@ public class WeatherFetcherService extends Service {
                         Log.e(TAG, "Exception getting stream", e);
                     }
 
-                    //TODO: handle response from server
                     return response;
                 }
                 return null;
