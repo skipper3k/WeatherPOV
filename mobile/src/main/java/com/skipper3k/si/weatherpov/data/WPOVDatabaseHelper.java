@@ -36,7 +36,7 @@ public class WPOVDatabaseHelper {
 
     private String[] allColumns = {
             "id as _id",
-            WPOVDatabase.COLUMN_OWM_ID,
+            WPOVDatabase.COLUMN_ID,
             WPOVDatabase.COLUMN_NAME,
             WPOVDatabase.COLUMN_TEMP,
             WPOVDatabase.COLUMN_HUMIDITY,
@@ -54,21 +54,29 @@ public class WPOVDatabaseHelper {
      * @param updateWeather if the weather data changes set to true
      */
     public void saveCity(WPOVCity city, boolean updateWeather) {
+        Log.i(TAG, "modifying city: " + city.id);
+        Log.i(TAG, "modifying city: " + city.name);
+        Log.i(TAG, "modifying city: " + city.temp);
+        Log.i(TAG, "modifying city: " + city.humidity);
+        Log.i(TAG, "modifying city: " + city.description);
+        Log.i(TAG, "modifying city: " + city.lastUpdated);
+        Log.i(TAG, "modifying city: " + city.favoured);
+
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        final String sql = " INSERT OR REPLACE INTO " + WPOVDatabase.TABLE_CITY + "("
-                + WPOVDatabase.COLUMN_OWM_ID + ", "
+        final String sqlStatement = "INSERT OR REPLACE INTO " + WPOVDatabase.TABLE_CITY + "("
+                + WPOVDatabase.COLUMN_ID + ", "
                 + WPOVDatabase.COLUMN_NAME + ", "
                 + WPOVDatabase.COLUMN_TEMP + ", "
                 + WPOVDatabase.COLUMN_HUMIDITY + ", "
                 + WPOVDatabase.COLUMN_DESCRIPTION + ", "
                 + WPOVDatabase.COLUMN_LAST_UPDATED + ", "
                 + WPOVDatabase.COLUMN_FAVORED
-                + " ) VALUES (?1,?2, ?3, ?4, ?5, ?6, ?7)";
+                + ") VALUES (?1,?2, ?3, ?4, ?5, ?6, ?7)";
 
-        SQLiteStatement stmt = connection.compileStatement(sql);
+        SQLiteStatement stmt = connection.compileStatement(sqlStatement);
 
-        stmt.bindString(1, city.id);
+        stmt.bindLong(1, city.id);
         stmt.bindString(2, city.name.trim());
         stmt.bindLong(3, city.temp);
         stmt.bindLong(4, city.humidity);
@@ -79,7 +87,15 @@ public class WPOVDatabaseHelper {
             stmt.bindString(6, city.lastUpdated != null ? sdf.format(city.lastUpdated) : "");
         }
         stmt.bindLong(7, city.favoured ? 1 : 0);
-        stmt.execute();
+
+        try {
+            stmt.execute();
+        } catch (Exception e) {
+            Log.e(TAG, "cannot update city", e);
+        }
+
+
+        stmt.close();
     }
 
     /**
@@ -90,7 +106,7 @@ public class WPOVDatabaseHelper {
     public List<WPOVCity> favouredCitiesList() {
         List<WPOVCity> cities = new ArrayList<>();
 
-        String selection = WPOVDatabase.COLUMN_FAVORED + " > 0";
+        String selection = WPOVDatabase.COLUMN_FAVORED + " = 1";
 
         Cursor cursor = connection.query(WPOVDatabase.TABLE_CITY,
                 allColumns, selection, null, null, null, null, null);
@@ -127,7 +143,7 @@ public class WPOVDatabaseHelper {
         boolean success = true;
 
         final String sql = " INSERT OR REPLACE INTO " + WPOVDatabase.TABLE_CITY + "("
-                + WPOVDatabase.COLUMN_OWM_ID + ", "             // 1
+                + WPOVDatabase.COLUMN_ID + ", "             // 1
                 + WPOVDatabase.COLUMN_NAME              // 2
                 + " ) VALUES (?1,?2)";
         SQLiteStatement stmt = connection.compileStatement(sql);
@@ -136,7 +152,7 @@ public class WPOVDatabaseHelper {
 
         try {
             for (WPOVCity city : cities.values()) {
-                stmt.bindString(1, city.id);
+                stmt.bindLong(1, city.id);
                 stmt.bindString(2, city.name.trim());
                 stmt.execute();
             }
@@ -145,7 +161,7 @@ public class WPOVDatabaseHelper {
         } catch (SQLiteException e) {
             success = false;
         }  finally {
-            Log.e(TAG, "endTransaction");
+            stmt.close();
             connection.endTransaction();
         }
 
@@ -202,7 +218,7 @@ public class WPOVDatabaseHelper {
 
         WPOVCity city = new WPOVCity();
 
-        city.id = cursor.getString(1);
+        city.id = cursor.getInt(1);
         city.name = cursor.getString(2);
         city.temp = cursor.getInt(3);
         city.humidity = cursor.getInt(4);

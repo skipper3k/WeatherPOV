@@ -7,4 +7,7 @@
     <string name="CitySearch">Search for a city</string>
 
     <string name="no_favourite_cities">No city added yet. Tap the add button to add cities.</string>
+
+    <string name="remove_from_favs">Removed %s from favourites.</string>
+    <string name="undo">Undo</string>
 </resources>

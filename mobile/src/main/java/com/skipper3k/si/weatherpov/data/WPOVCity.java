@@ -9,7 +9,7 @@ import java.util.Date;
  */
 public class WPOVCity implements Serializable {
 
-    public String id;
+    public int id;
     public String name;
     public int temp;
     public int humidity;

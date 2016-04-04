@@ -20,7 +20,6 @@ public class WPOVDatabase extends SQLiteOpenHelper {
     public static final String TABLE_CITY = "city";
 
     public static final String COLUMN_ID = "id";
-    public static final String COLUMN_OWM_ID = "owmid";
     public static final String COLUMN_NAME = "name";
     public static final String COLUMN_TEMP = "temperature";
     public static final String COLUMN_HUMIDITY = "humidity";
@@ -35,7 +34,7 @@ public class WPOVDatabase extends SQLiteOpenHelper {
     // todo_tag table create statement
     private static final String CREATE_TABLE_CITY = "CREATE TABLE IF NOT EXISTS "
             + TABLE_CITY + "(" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-            + COLUMN_OWM_ID + " text, " + COLUMN_NAME + " text, "
+            + COLUMN_NAME + " text, "
             + COLUMN_TEMP + " integer, " + COLUMN_HUMIDITY + " integer, "
             + COLUMN_DESCRIPTION + " text, " + COLUMN_LAST_UPDATED + " TIMESTAMP, "
             + COLUMN_FAVORED + " integer DEFAULT 0 )";
@@ -51,10 +50,6 @@ public class WPOVDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase database, int i, int i2) {
-        /** if updating db add column .. */
-        Log.e(TAG, "Updating db table!");
-        if (i ==1 && i2 == 2) {
-            database.execSQL(ALTER_TABLE_CITY);
-        }
+
     }
 }

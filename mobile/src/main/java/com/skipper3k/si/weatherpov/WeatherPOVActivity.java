@@ -60,6 +60,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
     private CitiesRecyclerViewAdapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
 
+    private List<WPOVCity> citiesList;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,8 +102,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
         mAdapter = new CitiesRecyclerViewAdapter(new ArrayList<WPOVCity>());
         mCitiesList.setAdapter(mAdapter);
 
-        ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-
+        ItemTouchHelper.SimpleCallback simpleItemTouchCallback =
+                new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
             public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
                 return false;
@@ -111,12 +113,40 @@ public class WeatherPOVActivity extends AppCompatActivity {
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
                 Log.e(TAG, "remove item at : " + swipeDir);
                 // todo: snackbar action
+                final int position = viewHolder.getAdapterPosition();
+                WPOVCity city = citiesList.get(position);
+                mAdapter.notifyItemRemoved(position);
+
+                city.favoured = false;
+
+                mWeatherFetcherService.saveCity(city);
+                citiesList.remove(city);
+
+
+                Snackbar.make(fab, getString(R.string.remove_from_favs, city.name), Snackbar.LENGTH_LONG)
+                        .setAction("Action", null)
+                    /**
+                     * city is actually dismissed when snackbar hides
+                     */
+                        .setCallback(new Snackbar.Callback() {
+                            @Override
+                            public void onDismissed(Snackbar snackbar, int event) {
+//                                Log.e(TAG, "Actually removing city: " + city);
+
+                                super.onDismissed(snackbar, event);
+                            }
+
+                            @Override
+                            public void onShown(Snackbar snackbar) {
+                                super.onShown(snackbar);
+                            }
+                        }).show();
+
             }
         };
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
         itemTouchHelper.attachToRecyclerView(mCitiesList);
-
 
         toggleNoCities(true);
 
@@ -131,14 +161,12 @@ public class WeatherPOVActivity extends AppCompatActivity {
      * get all saved cities from db and add them to the recyclerviewe adapter
      */
     private void fetchFavouriteCities() {
-        List<WPOVCity> cities = mWeatherFetcherService.favouriteCitiesList();
-        for (WPOVCity city : cities) {
-            Log.i(TAG, "favourite city: " + city.name);
-        }
+        citiesList = mWeatherFetcherService.favouriteCitiesList();
 
-        if (cities.size() > 0) {
+        if (citiesList.size() > 0) {
             toggleNoCities(false);
-            mAdapter.setData(cities);
+
+            mAdapter.setData(citiesList);
             mAdapter.notifyDataSetChanged();
         }
     }

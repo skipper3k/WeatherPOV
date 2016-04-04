@@ -152,7 +152,6 @@ public class WeatherFetcherService extends Service {
          * Load cities from db or the web ...
          */
 
-        if (Config.DEBUG) Log.i(TAG, "Fetching cities: " + FETCHING_CITIES);
         if (FETCHING_CITIES) return;
 
 
@@ -230,11 +229,11 @@ public class WeatherFetcherService extends Service {
             String line = citiesSplit[i];
 
             Matcher matcher = pId.matcher(line);
-            String id = null;
+            int id = 0;
 
             while (matcher.find()) {
                 line = line.substring(matcher.end(), line.length()).trim();
-                id = matcher.group();
+                id = Integer.parseInt(matcher.group());
             }
 
             Matcher cityMatch = pCity.matcher(line);
@@ -244,7 +243,7 @@ public class WeatherFetcherService extends Service {
                 city = cityMatch.group();
             }
 
-            if (id != null && city != null) {
+            if (id != 0 && city != null) {
                 WPOVCity c = new WPOVCity();
                 c.id = id;
                 c.name = city;
