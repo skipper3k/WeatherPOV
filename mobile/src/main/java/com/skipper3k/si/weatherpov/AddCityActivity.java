@@ -154,15 +154,11 @@ public class AddCityActivity extends AppCompatActivity {
 
             if (mWeatherFetcherService.isFETCHING_CITIES()) {
                 spinner.setVisibility(View.VISIBLE);
-
-                addButton.setEnabled(false);
             }
 
             mWeatherFetcherService.setmListener(new WeatherFetcherService.WeatherFetcherListener() {
                 @Override
                 public void citiesLoaded(Map<String, WPOVCity> cities) {
-                    addButton.setEnabled(true);
-
                     spinner.setVisibility(View.GONE);
                     Snackbar.make(spinner, "Cities successfully loaded!", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
