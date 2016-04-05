@@ -147,6 +147,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
                 removeCitiesList.put(position, city);
 
 
+                // disable refresh for the time of deletion
+                refreshLayout.setEnabled(false);
 
                 Snackbar.make(rootView, getString(R.string.remove_from_favs, city.name), Snackbar.LENGTH_LONG)
                         .setAction(getString(R.string.undo), new View.OnClickListener() {
@@ -162,6 +164,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
                                 // undo for the last element was not working
                                 toggleNoCities(false);
                                 removeCitiesList.remove(position);
+                                refreshLayout.setEnabled(true);
                             }
                         })
                     /**
@@ -174,7 +177,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
                                     mWeatherFetcherService.saveCity(removeCitiesList.get(position));
                                     removeCitiesList.remove(position);
                                 }
-
+                                refreshLayout.setEnabled(true);
                                 super.onDismissed(snackbar, event);
                             }
 
@@ -234,6 +237,8 @@ public class WeatherPOVActivity extends AppCompatActivity {
         }
 
         if (citiesList.size() > 0) {
+            toggleNoCities(false);
+
             mAdapter.setData(citiesList);
             mAdapter.notifyDataSetChanged();
         }
@@ -243,13 +248,10 @@ public class WeatherPOVActivity extends AppCompatActivity {
     private void updateFavouriteCitiesWeather(boolean online) {
         if (citiesList.size() > 0) {
             // set state to refreshing
-            toggleNoCities(false);
-
             boolean timedUpdate = false;
             // todo: check last update and update only if necessary
 
             if (online || timedUpdate) {
-                refreshLayout.setRefreshing(true);
                 mWeatherFetcherService.fetchCitiesWeather(citiesList, new WeatherFetcherService.WeatherFetcherListener() {
                     @Override
                     public void citiesLoaded(Map<String, WPOVCity> cities) {
@@ -281,7 +283,7 @@ public class WeatherPOVActivity extends AppCompatActivity {
     private void toggleNoCities(boolean nocities) {
         if (nocities) {
             mNoList.setVisibility(View.VISIBLE);
-            refreshLayout.setVisibility(View.GONE);
+            refreshLayout.setVisibility(View.INVISIBLE);
         } else {
             mNoList.setVisibility(View.GONE);
             refreshLayout.setVisibility(View.VISIBLE);
@@ -298,7 +300,6 @@ public class WeatherPOVActivity extends AppCompatActivity {
                 Snackbar.make(fab, "Cities successfully loaded!", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
 
-                // plainly reload favs
                 fetchFavouriteCities();
             }
 
