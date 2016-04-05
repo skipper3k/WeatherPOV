@@ -191,7 +191,9 @@ public class WeatherFetcherService extends Service {
                 SaveCitiesAsync citiesTask = new SaveCitiesAsync(WeatherFetcherService.this, new WeatherFetcherListener() {
                     @Override
                     public void citiesLoaded(Map<String, WPOVCity> cities) {
+                        FETCHING_CITIES = false;
                         if (listener != null) listener.citiesLoaded(cities);
+                        if (mListener != null) mListener.citiesLoaded(cities);
                     }
 
                     @Override
@@ -212,7 +214,6 @@ public class WeatherFetcherService extends Service {
                 Log.e(TAG, "Could not fetch a list of cities. Retry in 1 minute.");
             }
         });
-        task.execute(cityListURL);
         task.execute(cityListURL);
     }
 

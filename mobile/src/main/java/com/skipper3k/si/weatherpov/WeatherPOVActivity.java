@@ -36,10 +36,7 @@ import java.util.Map;
  * Main Android activity
  *
  * TODO:
- *  - Recycleview list + adapter
- *  - Toggle listview/no cities message
- *  - Connect to service to access data
- *
+ *  - limit to 2 stacked snackbars per Google guidlines
  *
  */
 public class WeatherPOVActivity extends AppCompatActivity {
