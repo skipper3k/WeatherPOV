@@ -15,3 +15,18 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable
+-printmapping proguardMapping.txt
+
+
+################## ANDROID #################
+-dontwarn android.support.v4.**
+-keep class android.support.v4.** { *; }
+
+-dontwarn android.support.v7.**
+-keep class android.support.v7.** { *; }
+
+-keep public class com.google.android.gms.* { public *; }
+-dontwarn com.google.android.gms.**
